@@ -114,9 +114,7 @@ export default function DashboardPage() {
             <header className="px-8 py-5 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md sticky top-0 z-40">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <div className="w-12 h-12 rounded-full overflow-hidden border border-white/10 relative group">
-                            <Image src="/Logo.jpeg" alt="C.O.P.S." fill className="object-cover transition duration-500 group-hover:scale-110 grayscale group-hover:grayscale-0" />
-                        </div>
+
                         <div>
                             <h1 className="text-2xl font-bold text-white tracking-tight">C.O.P.S. <span className="font-light text-gray-500">Center</span></h1>
                             <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold opacity-70">Command Operations</p>

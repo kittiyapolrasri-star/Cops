@@ -7,30 +7,32 @@ import { trackingApi, riskzoneApi } from '@/lib/api';
 
 // --- ICONS ---
 const createPatrolIcon = (rank: string) => {
-    // A simple SVG marker construction for diversity
+    // Neon Cyberpunk Marker
     return new L.DivIcon({
         html: `<div class="relative group">
-       <div class="w-8 h-8 bg-black/80 backdrop-blur-sm rounded-full border-2 border-emerald-500 shadow-lg shadow-emerald-500/20 flex items-center justify-center transform transition-transform group-hover:scale-110">
-         <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+       <div class="w-10 h-10 bg-black/60 backdrop-blur-md rounded-full border-[3px] border-[#00ffff] shadow-[0_0_15px_#00ffff] flex items-center justify-center transform transition-transform group-hover:scale-110">
+         <div class="w-3 h-3 bg-[#00ffff] rounded-full animate-pulse shadow-[0_0_10px_#00ffff]"></div>
        </div>
-       <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/90 px-2 py-0.5 rounded text-[8px] text-white whitespace-nowrap border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
-         ${rank}
+       <div class="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-black/90 px-3 py-1 rounded border border-[#00ffff]/30 shadow-[0_0_10px_rgba(0,255,255,0.2)]">
+         <span class="text-[10px] font-bold text-[#00ffff] tracking-widest whitespace-nowrap drop-shadow-[0_0_5px_rgba(0,255,255,0.5)]">
+           ${rank}
+         </span>
        </div>
      </div>`,
         className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -20],
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -25],
     });
 };
 
 const getRiskColor = (level: string) => {
     switch (level) {
-        case 'CRITICAL': return '#f43f5e'; // Rose
-        case 'HIGH': return '#f97316'; // Orange
-        case 'MEDIUM': return '#eab308'; // Yellow
-        case 'LOW': return '#10b981'; // Emerald
-        default: return '#6b7280';
+        case 'CRITICAL': return '#ff0055'; // Neon Red/Pink
+        case 'HIGH': return '#ff5500'; // Neon Orange
+        case 'MEDIUM': return '#ffcc00'; // Neon Yellow
+        case 'LOW': return '#00ffcc'; // Neon Cyan
+        default: return '#888888';
     }
 };
 
@@ -107,8 +109,8 @@ export default function DashboardMap() {
                     pathOptions={{
                         color: getRiskColor(zone.riskLevel),
                         fillColor: getRiskColor(zone.riskLevel),
-                        fillOpacity: 0.1,
-                        weight: 1,
+                        fillOpacity: 0.2,
+                        weight: 2,
                         dashArray: '4, 8',
                     }}
                 >

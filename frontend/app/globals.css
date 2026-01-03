@@ -40,8 +40,6 @@ body {
   height: 100%;
   border-radius: 0.75rem;
   background: #0a0a0a;
-  filter: grayscale(100%) invert(0%) contrast(1.1);
-  /* Slight contrast boost */
 }
 
 .leaflet-popup-content-wrapper {
