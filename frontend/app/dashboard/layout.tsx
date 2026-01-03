@@ -85,15 +85,12 @@ export default function DashboardLayout({
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <NotificationBell />
-                        <button
-                            onClick={() => setCollapsed(!collapsed)}
-                            className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition"
-                        >
-                            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition"
+                    >
+                        {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                    </button>
                 </div>
 
                 {/* Nav items */}
@@ -159,6 +156,10 @@ export default function DashboardLayout({
 
             {/* Main content with left margin for sidebar */}
             <main className={`flex-1 transition-all duration-300 ${collapsed ? 'ml-20' : 'ml-64'}`}>
+                {/* Top bar with notifications */}
+                <div className="h-14 bg-gray-950/80 backdrop-blur-md border-b border-gray-800 px-6 flex items-center justify-end sticky top-0 z-40">
+                    <NotificationBell />
+                </div>
                 {children}
             </main>
         </div>
