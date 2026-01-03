@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { incidentApi } from '@/lib/api';
-import { format } from 'date-fns';
+
 import {
     AlertTriangle,
     Search,
@@ -132,8 +132,8 @@ export default function IncidentsPage() {
                         <div
                             key={incident.id}
                             className={`p-4 rounded-xl border transition ${incident.status === 'ACTIVE'
-                                    ? 'bg-gradient-to-r from-gray-900 to-gray-800 border-l-4 border-l-rose-500 border-gray-800'
-                                    : 'bg-gray-900 border-l-4 border-l-emerald-500 border-gray-800 opacity-75'
+                                ? 'bg-gradient-to-r from-gray-900 to-gray-800 border-l-4 border-l-rose-500 border-gray-800'
+                                : 'bg-gray-900 border-l-4 border-l-emerald-500 border-gray-800 opacity-75'
                                 }`}
                         >
                             <div className="flex items-start justify-between gap-4">
