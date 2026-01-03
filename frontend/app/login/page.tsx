@@ -49,6 +49,9 @@ export default function LoginPage() {
 
             <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.05] mask-image-linear-gradient(to bottom, transparent, black) pointer-events-none"></div>
 
+            {/* World Map Shadow Pattern */}
+            <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/8/80/World_map_-_low_resolution.svg')] bg-no-repeat bg-center bg-contain opacity-[0.07] mix-blend-screen pointer-events-none filter drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]"></div>
+
             <div className="w-full max-w-[400px] relative z-10 animate-in fade-in zoom-in duration-1000 slide-in-from-bottom-8">
 
                 {/* Header Section with Stronger Presence */}
@@ -120,10 +123,10 @@ export default function LoginPage() {
                         {isLoading ? (
                             <div className="flex items-center justify-center gap-2">
                                 <Loader className="w-4 h-4 animate-spin" />
-                                <span>Establishing Uplink...</span>
+                                <span>กำลังเชื่อมต่อ...</span>
                             </div>
                         ) : (
-                            'INITIATE SESSION'
+                            'เข้าสู่ระบบ'
                         )}
                     </button>
                 </form>
