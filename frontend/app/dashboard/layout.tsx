@@ -156,10 +156,6 @@ export default function DashboardLayout({
 
             {/* Main content with left margin for sidebar */}
             <main className={`flex-1 transition-all duration-300 ${collapsed ? 'ml-20' : 'ml-64'}`}>
-                {/* Top bar with notifications */}
-                <div className="h-14 bg-gray-950/80 backdrop-blur-md border-b border-gray-800 px-6 flex items-center justify-end sticky top-0 z-40">
-                    <NotificationBell />
-                </div>
                 {children}
             </main>
         </div>

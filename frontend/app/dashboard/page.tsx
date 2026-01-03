@@ -20,6 +20,7 @@ import dynamic from 'next/dynamic';
 
 const DashboardMap = dynamic(() => import('@/components/DashboardMap'), { ssr: false });
 const FeedStream = dynamic(() => import('@/components/FeedStream'), { ssr: false });
+const NotificationBell = dynamic(() => import('@/components/NotificationBell'), { ssr: false });
 
 export default function DashboardPage() {
     const { user } = useAuthStore();
@@ -122,6 +123,9 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="flex items-center gap-8">
+                        {/* Notification Bell */}
+                        <NotificationBell />
+
                         {/* Live Status */}
                         <div className="flex items-center gap-3">
                             <span className="relative flex h-3 w-3">
