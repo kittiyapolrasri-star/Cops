@@ -50,6 +50,7 @@ export default function DashboardLayout({
         { name: 'แผนที่ยุทธวิธี', href: '/dashboard/map', icon: Map },
         { name: 'พื้นที่เสี่ยง', href: '/dashboard/riskzones', icon: AlertTriangle },
         { name: 'รายงานเหตุการณ์', href: '/dashboard/incidents', icon: FileText },
+        { name: 'ผู้ใช้งาน', href: '/dashboard/users', icon: User },
         { name: 'สถิติ', href: '/dashboard/stats', icon: Radio },
     ];
 
@@ -99,8 +100,8 @@ export default function DashboardLayout({
                                 href={item.href}
                                 title={item.name}
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition ${isActive
-                                        ? 'bg-gray-800 text-white border-l-2 border-white'
-                                        : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200'
+                                    ? 'bg-gray-800 text-white border-l-2 border-white'
+                                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-gray-200'
                                     }`}
                             >
                                 <item.icon className="w-5 h-5 flex-shrink-0" />
