@@ -7,7 +7,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: cops1234
       POSTGRES_DB: ${POSTGRES_DB:-cops_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -35,7 +35,7 @@ services:
     container_name: cops-backend
     restart: always
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-cops_db}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:cops1234@postgres:5432/${POSTGRES_DB:-cops_db}?schema=public
       JWT_SECRET: ${JWT_SECRET:-cops-production-secret-key-change-this}
       JWT_EXPIRES_IN: 7d
       PORT: 4000
