@@ -3,69 +3,82 @@
 import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { useAuthStore } from '@/lib/store/auth';
+import { trackingApi, riskzoneApi } from '@/lib/api';
 
-// Custom patrol marker icon
-const patrolIcon = new L.DivIcon({
-    html: `<div class="relative">
-    <div class="w-10 h-10 bg-blue-600 rounded-full border-4 border-white shadow-lg flex items-center justify-center">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><circle cx="12" cy="10" r="3"/></svg>
-    </div>
-    <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-blue-600 rotate-45"></div>
-  </div>`,
-    className: '',
-    iconSize: [40, 48],
-    iconAnchor: [20, 48],
-    popupAnchor: [0, -48],
-});
-
-// Risk zone colors
-const getRiskColor = (level: string) => {
-    switch (level) {
-        case 'CRITICAL': return '#dc2626';
-        case 'HIGH': return '#ef4444';
-        case 'MEDIUM': return '#f59e0b';
-        case 'LOW': return '#22c55e';
-        default: return '#3b82f6';
-    }
+// --- ICONS ---
+const createPatrolIcon = (rank: string) => {
+    // A simple SVG marker construction for diversity
+    return new L.DivIcon({
+        html: `<div class="relative group">
+       <div class="w-8 h-8 bg-black/80 backdrop-blur-sm rounded-full border-2 border-emerald-500 shadow-lg shadow-emerald-500/20 flex items-center justify-center transform transition-transform group-hover:scale-110">
+         <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+       </div>
+       <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/90 px-2 py-0.5 rounded text-[8px] text-white whitespace-nowrap border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+         ${rank}
+       </div>
+     </div>`,
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -20],
+    });
 };
 
-// Demo data
-const demoPatrols = [
-    { id: '1', lat: 14.3378, lng: 100.8657, name: 'ด.ต.สมศักดิ์', status: 'active' },
-    { id: '2', lat: 14.3390, lng: 100.8670, name: 'ส.ต.อ.สมหญิง', status: 'active' },
-    { id: '3', lat: 14.3365, lng: 100.8645, name: 'จ.ส.ต.สมชาย', status: 'active' },
-];
-
-const demoRiskZones = [
-    { id: '1', lat: 14.3385, lng: 100.8665, name: 'ซอยเปลี่ยว ม.3', level: 'HIGH', radius: 50 },
-    { id: '2', lat: 14.3372, lng: 100.8650, name: 'ตลาดสดหนองแค', level: 'MEDIUM', radius: 40 },
-    { id: '3', lat: 14.3390, lng: 100.8640, name: 'สี่แยกไฟแดง', level: 'MEDIUM', radius: 30 },
-    { id: '4', lat: 14.3365, lng: 100.8680, name: 'สวนสาธารณะ', level: 'LOW', radius: 50 },
-];
+const getRiskColor = (level: string) => {
+    switch (level) {
+        case 'CRITICAL': return '#f43f5e'; // Rose
+        case 'HIGH': return '#f97316'; // Orange
+        case 'MEDIUM': return '#eab308'; // Yellow
+        case 'LOW': return '#10b981'; // Emerald
+        default: return '#6b7280';
+    }
+};
 
 function MapController({ center }: { center: [number, number] }) {
     const map = useMap();
     useEffect(() => {
-        map.setView(center, 16);
+        // Only fly to if center changes significantly
+        map.flyTo(center, map.getZoom());
     }, [center, map]);
     return null;
 }
 
 export default function DashboardMap() {
-    const [mounted, setMounted] = useState(false);
-    const center: [number, number] = [14.3378, 100.8657]; // Nongkhae Station
+    const [patrols, setPatrols] = useState<any[]>([]);
+    const [riskZones, setRiskZones] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Default center (Saraburi / Nongkhae)
+    const [center, setCenter] = useState<[number, number]>([14.3378, 100.8657]);
+
+    const fetchData = async () => {
+        try {
+            const [patrolRes, riskRes] = await Promise.all([
+                trackingApi.getActivePatrols(),
+                riskzoneApi.getAll()
+            ]);
+
+            if (patrolRes.data) setPatrols(patrolRes.data);
+            if (riskRes.data) setRiskZones(riskRes.data);
+        } catch (err) {
+            console.error("Map data fetch error", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        setMounted(true);
+        fetchData();
+        const interval = setInterval(fetchData, 10000); // 10s Real-time update
+        return () => clearInterval(interval);
     }, []);
 
-    if (!mounted) {
+    if (loading && patrols.length === 0 && riskZones.length === 0) {
         return (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <div className="text-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2" />
-                    <p className="text-gray-500 text-sm">กำลังโหลดแผนที่...</p>
+            <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a]">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs text-emerald-500 font-mono tracking-widest">INITIALIZING SATELLITE LINK...</p>
                 </div>
             </div>
         );
@@ -74,62 +87,76 @@ export default function DashboardMap() {
     return (
         <MapContainer
             center={center}
-            zoom={16}
+            zoom={14}
             className="w-full h-full"
             zoomControl={false}
+            style={{ background: '#0a0a0a' }}
         >
             <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>'
+                url="https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png"
+                maxZoom={20}
             />
-            <MapController center={center} />
 
             {/* Risk Zones */}
-            {demoRiskZones.map((zone) => (
+            {riskZones.map((zone) => (
                 <Circle
                     key={zone.id}
-                    center={[zone.lat, zone.lng]}
-                    radius={zone.radius}
+                    center={[zone.latitude, zone.longitude]}
+                    radius={zone.radius || 100}
                     pathOptions={{
-                        color: getRiskColor(zone.level),
-                        fillColor: getRiskColor(zone.level),
-                        fillOpacity: 0.2,
-                        weight: 2,
+                        color: getRiskColor(zone.riskLevel),
+                        fillColor: getRiskColor(zone.riskLevel),
+                        fillOpacity: 0.1,
+                        weight: 1,
+                        dashArray: '4, 8',
                     }}
                 >
-                    <Popup>
-                        <div className="text-center">
-                            <p className="font-semibold">{zone.name}</p>
-                            <span className={`inline-block px-2 py-0.5 text-xs rounded-full text-white mt-1`}
-                                style={{ backgroundColor: getRiskColor(zone.level) }}>
-                                {zone.level}
-                            </span>
+                    <Popup className="dark-popup">
+                        <div className="p-2 min-w-[150px]">
+                            <h4 className="font-bold text-white text-sm">{zone.name}</h4>
+                            <p className="text-xs text-gray-400 mt-1">{zone.description}</p>
+                            <div className="mt-2 flex gap-2">
+                                <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-white border border-white/10">
+                                    {zone.riskLevel}
+                                </span>
+                            </div>
                         </div>
                     </Popup>
                 </Circle>
             ))}
 
-            {/* Patrol Officers */}
-            {demoPatrols.map((patrol) => (
-                <Marker
-                    key={patrol.id}
-                    position={[patrol.lat, patrol.lng]}
-                    icon={patrolIcon}
-                >
-                    <Popup>
-                        <div className="text-center">
-                            <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto mb-2 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600"><circle cx="12" cy="8" r="4" /><path d="M20 21a8 8 0 1 0-16 0" /></svg>
+            {/* Active Patrols */}
+            {patrols.map((patrol) => {
+                // Using location history or current location
+                const loc = patrol.currentLocation;
+                if (!loc) return null;
+
+                return (
+                    <Marker
+                        key={patrol.id}
+                        position={[loc.latitude, loc.longitude]}
+                        icon={createPatrolIcon(patrol.user.rank)}
+                    >
+                        <Popup>
+                            <div className="p-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center border border-gray-600">
+                                        <span className="text-xs font-bold text-white">{patrol.user.firstName.charAt(0)}</span>
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-white text-sm">{patrol.user.rank} {patrol.user.firstName}</p>
+                                        <p className="text-[10px] text-emerald-400">ACTIVE DUTY</p>
+                                    </div>
+                                </div>
+                                <div className="text-[10px] text-gray-400 font-mono">
+                                    Last ping: {new Date(loc.timestamp).toLocaleTimeString()}
+                                </div>
                             </div>
-                            <p className="font-semibold text-gray-800">{patrol.name}</p>
-                            <div className="flex items-center justify-center gap-1 mt-1">
-                                <span className="w-2 h-2 rounded-full bg-green-500" />
-                                <span className="text-xs text-green-600">กำลังลาดตระเวน</span>
-                            </div>
-                        </div>
-                    </Popup>
-                </Marker>
-            ))}
+                        </Popup>
+                    </Marker>
+                );
+            })}
         </MapContainer>
     );
 }

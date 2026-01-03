@@ -2,21 +2,21 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useAuthStore } from '@/lib/store/auth';
+import { trackingApi, checkinApi, incidentApi } from '@/lib/api';
 import {
     MapPin,
     Radio,
     Camera,
     Mic,
-    CheckCircle,
     AlertTriangle,
-    Shield,
     Navigation,
-    Clock,
     X,
     Send,
-    Plus,
-    ChevronRight,
+    ArrowLeft,
+    Loader,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -32,6 +32,7 @@ interface Location {
 export default function PatrolPage() {
     const router = useRouter();
     const { user, isAuthenticated, checkAuth } = useAuthStore();
+
     const [isPatrolling, setIsPatrolling] = useState(false);
     const [location, setLocation] = useState<Location | null>(null);
     const [watchId, setWatchId] = useState<number | null>(null);
@@ -65,50 +66,85 @@ export default function PatrolPage() {
         return () => clearInterval(interval);
     }, [isPatrolling, patrolStartTime]);
 
-    const startPatrol = useCallback(() => {
+    const updateServerLocation = async (loc: Location) => {
+        try {
+            await trackingApi.updateLocation({
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                accuracy: loc.accuracy
+            });
+        } catch (err) {
+            console.error("Failed to update location", err);
+        }
+    };
+
+    const startPatrol = useCallback(async () => {
         if ('geolocation' in navigator) {
-            const id = navigator.geolocation.watchPosition(
-                (position) => {
-                    setLocation({
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        accuracy: position.coords.accuracy,
-                        timestamp: new Date(),
-                    });
-                },
-                (error) => {
-                    console.error('Geolocation error:', error);
-                    alert('ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาอนุญาตการเข้าถึง GPS');
-                },
-                {
-                    enableHighAccuracy: true,
-                    maximumAge: 10000,
-                    timeout: 5000,
-                }
-            );
-            setWatchId(id);
-            setIsPatrolling(true);
-            setPatrolStartTime(new Date());
+            try {
+                await trackingApi.startPatrol();
+
+                const id = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const newLoc = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            timestamp: new Date(),
+                        };
+                        setLocation(newLoc);
+                        if (isPatrolling) { // Only send if actively patrolling
+                            updateServerLocation(newLoc);
+                        }
+                    },
+                    (error) => {
+                        console.error('Geolocation error:', error);
+                        alert('ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาอนุญาตการเข้าถึง GPS');
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        maximumAge: 10000,
+                        timeout: 5000,
+                    }
+                );
+                setWatchId(id);
+                setIsPatrolling(true);
+                setPatrolStartTime(new Date());
+            } catch (err) {
+                alert('ไม่สามารถเริ่มลาดตระเวนได้: ' + (err as any).message);
+            }
         } else {
             alert('เบราว์เซอร์นี้ไม่รองรับ Geolocation');
         }
-    }, []);
+    }, [isPatrolling]);
 
-    const endPatrol = useCallback(() => {
-        if (watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-            setWatchId(null);
+    const endPatrol = useCallback(async () => {
+        try {
+            await trackingApi.endPatrol();
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                setWatchId(null);
+            }
+            setIsPatrolling(false);
+            setPatrolStartTime(null);
+            setPatrolTime('00:00:00');
+        } catch (err) {
+            alert('เกิดข้อผิดพลาดในการจบภารกิจ');
         }
-        setIsPatrolling(false);
-        setPatrolStartTime(null);
-        setPatrolTime('00:00:00');
     }, [watchId]);
 
-    const handleCheckIn = () => {
+    const handleCheckIn = async () => {
         if (location) {
-            setCheckIns(prev => prev + 1);
-            // TODO: Call API to create check-in
-            alert('เช็คอินสำเร็จ!');
+            try {
+                await checkinApi.create({
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                    note: 'Manual Check-in'
+                });
+                setCheckIns(prev => prev + 1);
+                alert('เช็คอินสำเร็จ!');
+            } catch (err) {
+                alert('เช็คอินล้มเหลว ลองใหม่อีกครั้ง');
+            }
         } else {
             alert('ไม่พบตำแหน่ง กรุณารอสักครู่');
         }
@@ -119,24 +155,30 @@ export default function PatrolPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white">
+        <div className="min-h-screen bg-[#050505] text-white font-sans">
             {/* Header */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-900 to-indigo-900 px-4 py-3 shadow-lg">
+            <header className="fixed top-0 left-0 right-0 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-white/5 px-4 py-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
-                            <Shield className="w-6 h-6" />
+                        <Link
+                            href="/dashboard"
+                            className="w-10 h-10 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5"
+                        >
+                            <ArrowLeft className="w-5 h-5 text-gray-400" />
+                        </Link>
+                        <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 relative">
+                            <Image src="/Logo.jpeg" alt="C.O.P.S." fill className="object-cover" />
                         </div>
                         <div>
-                            <p className="text-sm font-medium">{user?.rank} {user?.firstName}</p>
-                            <p className="text-xs text-blue-300">สายตรวจ</p>
+                            <p className="text-sm font-bold text-white tracking-wide">{user?.rank} {user?.firstName}</p>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest">Patrol Unit</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {isPatrolling && (
-                            <div className="flex items-center gap-2 px-3 py-1 bg-green-600 rounded-full text-sm">
-                                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-                                <span>LIVE</span>
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-xs font-bold text-emerald-500 tracking-wider">ON DUTY</span>
                             </div>
                         )}
                     </div>
@@ -144,71 +186,74 @@ export default function PatrolPage() {
             </header>
 
             {/* Map area */}
-            <div className="pt-16 h-[50vh]">
+            <div className="pt-16 h-[50vh] relative">
                 <PatrolMap location={location} />
+                {/* Overlay Gradients */}
+                <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-[#050505] to-transparent pointer-events-none z-[400]" />
+                <div className="absolute bottom-0 inset-x-0 h-16 bg-gradient-to-t from-[#050505] to-transparent pointer-events-none z-[400]" />
             </div>
 
             {/* Status panel */}
-            <div className="bg-gray-800 border-t border-gray-700 p-4">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                        <p className="text-2xl font-bold text-blue-400">{patrolTime}</p>
-                        <p className="text-xs text-gray-400">เวลาลาดตระเวน</p>
+            <div className="bg-[#0a0a0a] border-t border-b border-white/5 p-4 relative z-10">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                        <p className="text-2xl font-bold text-sky-400 font-mono tracking-tighter">{patrolTime}</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Duration</p>
                     </div>
-                    <div>
-                        <p className="text-2xl font-bold text-green-400">{checkIns}</p>
-                        <p className="text-xs text-gray-400">เช็คอินวันนี้</p>
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                        <p className="text-2xl font-bold text-emerald-400 font-mono">{checkIns}</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Check-ins</p>
                     </div>
-                    <div>
-                        <p className="text-2xl font-bold text-yellow-400">
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5">
+                        <p className="text-xl font-bold text-amber-400 font-mono mt-1">
                             {location ? `±${Math.round(location.accuracy)}m` : '--'}
                         </p>
-                        <p className="text-xs text-gray-400">ความแม่นยำ</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">GPS Acc</p>
                     </div>
                 </div>
             </div>
 
             {/* Actions */}
-            <div className="p-4 space-y-4">
+            <div className="p-4 space-y-3 bg-[#050505]">
                 {/* Patrol toggle */}
                 <button
                     onClick={isPatrolling ? endPatrol : startPatrol}
-                    className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition ${isPatrolling
-                            ? 'bg-red-600 hover:bg-red-700'
-                            : 'bg-green-600 hover:bg-green-700'
+                    className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition shadow-lg ${isPatrolling
+                            ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20'
+                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
                         }`}
                 >
-                    <Radio className="w-6 h-6" />
-                    {isPatrolling ? 'สิ้นสุดการลาดตระเวน' : 'เริ่มลาดตระเวน'}
+                    <Radio className="w-6 h-6 animate-pulse" />
+                    {isPatrolling ? 'END PATROL' : 'START PATROL'}
                 </button>
 
                 {/* Check-in button */}
                 <button
                     onClick={handleCheckIn}
                     disabled={!isPatrolling}
-                    className="w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 text-white disabled:opacity-50 disabled:cursor-not-allowed transition border border-white/10 backdrop-blur-md"
                 >
                     <MapPin className="w-6 h-6" />
-                    เช็คอินจุดตรวจ
+                    CHECK-IN POINT
                 </button>
 
                 {/* Incident Report buttons */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                     <button
                         onClick={() => { setIncidentType('PREVENTION'); setShowIncidentModal(true); }}
                         disabled={!isPatrolling}
-                        className="py-4 rounded-xl font-medium flex flex-col items-center gap-2 bg-yellow-600 hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        className="py-4 rounded-xl font-bold flex flex-col items-center gap-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-500 border border-amber-600/30 disabled:opacity-30 transition"
                     >
                         <Camera className="w-6 h-6" />
-                        <span>งานป้องกัน</span>
+                        <span className="text-sm tracking-wider">PREVENTION</span>
                     </button>
                     <button
                         onClick={() => { setIncidentType('SUPPRESSION'); setShowIncidentModal(true); }}
                         disabled={!isPatrolling}
-                        className="py-4 rounded-xl font-medium flex flex-col items-center gap-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        className="py-4 rounded-xl font-bold flex flex-col items-center gap-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-500 border border-rose-600/30 disabled:opacity-30 transition"
                     >
                         <AlertTriangle className="w-6 h-6" />
-                        <span>งานปราบปราม</span>
+                        <span className="text-sm tracking-wider">SUPPRESSION</span>
                     </button>
                 </div>
             </div>
@@ -219,10 +264,15 @@ export default function PatrolPage() {
                     type={incidentType!}
                     location={location}
                     onClose={() => { setShowIncidentModal(false); setIncidentType(null); }}
-                    onSubmit={() => {
-                        setShowIncidentModal(false);
-                        setIncidentType(null);
-                        alert('บันทึกรายงานสำเร็จ!');
+                    onSubmit={async (data) => {
+                        try {
+                            await incidentApi.create(data);
+                            setShowIncidentModal(false);
+                            setIncidentType(null);
+                            alert('ส่งรายงานสำเร็จ!');
+                        } catch (err) {
+                            alert('ส่งรายงานล้มเหลว');
+                        }
                     }}
                 />
             )}
@@ -230,7 +280,7 @@ export default function PatrolPage() {
     );
 }
 
-// Incident Modal Component
+// Incident Modal Component - Refined Dark Theme
 function IncidentModal({
     type,
     location,
@@ -240,31 +290,27 @@ function IncidentModal({
     type: 'PREVENTION' | 'SUPPRESSION';
     location: Location | null;
     onClose: () => void;
-    onSubmit: () => void;
+    onSubmit: (data: any) => Promise<void>;
 }) {
     const [description, setDescription] = useState('');
     const [selectedItems, setSelectedItems] = useState<string[]>([]);
+    const [submitting, setSubmitting] = useState(false);
 
     const suppressionCategories = [
         {
             category: 'TRAFFIC',
-            title: '🚗 ยานพาหนะ',
-            items: ['ไม่ติดแผ่นป้ายทะเบียน', 'ท่อไอเสียเสียงดัง', 'ดัดแปลงสภาพผิดกฎหมาย'],
+            title: 'VEHICLES',
+            items: ['No Plate', 'Loud Exhaust', 'Modified'],
         },
         {
             category: 'DRUGS',
-            title: '💊 ยาเสพติด',
-            items: ['ยาบ้า', 'ไอซ์', 'เค/ยาไอซ์', 'กัญชา', 'อื่นๆ'],
+            title: 'DRUGS',
+            items: ['Meth', 'Ice', 'Ketamine', 'Cannabis'],
         },
         {
             category: 'WEAPONS',
-            title: '🔫 อาวุธ',
-            items: ['อาวุธมีด', 'ปืนไทยประดิษฐ์', 'ปืนมีทะเบียน', 'ปืนสงคราม'],
-        },
-        {
-            category: 'OTHERS',
-            title: '📦 อื่นๆ',
-            items: ['สิ่งผิดกฎหมายอื่นๆ'],
+            title: 'WEAPONS',
+            items: ['Knife', 'Homemade Gun', 'Licensed Gun', 'War Weapon'],
         },
     ];
 
@@ -276,90 +322,112 @@ function IncidentModal({
         );
     };
 
+    const handleSubmit = async () => {
+        if (!location) {
+            alert("Waiting for location...");
+            return;
+        }
+        setSubmitting(true);
+        await onSubmit({
+            type,
+            description: description + (selectedItems.length > 0 ? ` [Items: ${selectedItems.join(', ')}]` : ''),
+            latitude: location.latitude,
+            longitude: location.longitude,
+        });
+        setSubmitting(false);
+    };
+
     return (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-end justify-center">
-            <div className="w-full max-w-lg bg-gray-800 rounded-t-2xl max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-end justify-center">
+            <div className="w-full max-w-lg bg-[#0a0a0a] rounded-t-3xl max-h-[90vh] overflow-y-auto border-t border-white/10 shadow-2xl shadow-black">
                 {/* Header */}
-                <div className="sticky top-0 bg-gray-800 px-4 py-3 border-b border-gray-700 flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">
-                        {type === 'PREVENTION' ? '📸 งานป้องกัน' : '⚠️ งานปราบปราม'}
+                <div className="sticky top-0 bg-[#0a0a0a]/90 backdrop-blur-md px-6 py-5 border-b border-white/5 flex items-center justify-between z-10">
+                    <h2 className={`text-xl font-bold tracking-tight ${type === 'PREVENTION' ? 'text-amber-500' : 'text-rose-500'}`}>
+                        {type === 'PREVENTION' ? 'PREVENTION REPORT' : 'SUPPRESSION REPORT'}
                     </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full">
-                        <X className="w-5 h-5" />
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition text-gray-400">
+                        <X className="w-6 h-6" />
                     </button>
                 </div>
 
-                <div className="p-4 space-y-4">
+                <div className="p-6 space-y-6">
                     {/* Location info */}
-                    <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Navigation className="w-4 h-4" />
+                    <div className="flex items-center gap-3 text-xs font-mono text-gray-400 bg-white/5 p-4 rounded-xl border border-white/5">
+                        <Navigation className="w-4 h-4 text-emerald-500" />
                         <span>
                             {location
-                                ? `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`
-                                : 'กำลังหาตำแหน่ง...'}
+                                ? `LAT: ${location.latitude.toFixed(6)} | LNG: ${location.longitude.toFixed(6)}`
+                                : 'ACQUIRING SATELLITE SIGNAL...'}
                         </span>
                     </div>
 
                     {type === 'SUPPRESSION' && (
-                        <>
-                            <p className="text-sm text-gray-400">เลือกประเภทของกลาง:</p>
+                        <div className="space-y-4">
                             {suppressionCategories.map((category) => (
                                 <div key={category.category} className="space-y-2">
-                                    <p className="text-sm font-medium text-gray-300">{category.title}</p>
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest pl-1">{category.title}</p>
                                     <div className="flex flex-wrap gap-2">
                                         {category.items.map((item) => (
                                             <button
                                                 key={item}
                                                 onClick={() => toggleItem(item)}
-                                                className={`px-3 py-1.5 rounded-full text-sm transition ${selectedItems.includes(item)
-                                                        ? 'bg-blue-600 text-white'
-                                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                                className={`px-4 py-2 rounded-lg text-xs font-bold transition border ${selectedItems.includes(item)
+                                                        ? 'bg-white text-black border-white'
+                                                        : 'bg-white/5 text-gray-400 border-white/5 hover:border-white/20'
                                                     }`}
                                             >
-                                                {selectedItems.includes(item) && <span className="mr-1">✓</span>}
                                                 {item}
                                             </button>
                                         ))}
                                     </div>
                                 </div>
                             ))}
-                        </>
+                        </div>
                     )}
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm text-gray-400 mb-2">
-                            {type === 'PREVENTION' ? 'รายละเอียดเหตุการณ์' : 'หมายเหตุ'}
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-3 pl-1">
+                            Details / Remarks
                         </label>
                         <textarea
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-white/20 transition resize-none"
                             rows={3}
-                            placeholder="พิมพ์รายละเอียด..."
+                            placeholder="Type details here..."
                         />
                     </div>
 
-                    {/* Photo button */}
-                    <button className="w-full py-3 rounded-lg bg-gray-700 hover:bg-gray-600 flex items-center justify-center gap-2 transition">
-                        <Camera className="w-5 h-5" />
-                        <span>ถ่ายรูป / แนบรูปภาพ</span>
-                    </button>
-
-                    {/* Voice button */}
-                    <button className="w-full py-3 rounded-lg bg-gray-700 hover:bg-gray-600 flex items-center justify-center gap-2 transition">
-                        <Mic className="w-5 h-5" />
-                        <span>บันทึกเสียง (Speech-to-Text)</span>
-                    </button>
+                    {/* Media Buttons */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <button className="py-4 rounded-xl bg-white/5 hover:bg-white/10 flex flex-col items-center justify-center gap-2 transition border border-white/5 group">
+                            <Camera className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                            <span className="text-[10px] uppercase font-bold text-gray-500 group-hover:text-white">Photo</span>
+                        </button>
+                        <button className="py-4 rounded-xl bg-white/5 hover:bg-white/10 flex flex-col items-center justify-center gap-2 transition border border-white/5 group">
+                            <Mic className="w-5 h-5 text-gray-400 group-hover:text-white" />
+                            <span className="text-[10px] uppercase font-bold text-gray-500 group-hover:text-white">Voice Note</span>
+                        </button>
+                    </div>
 
                     {/* Submit */}
                     <button
-                        onClick={onSubmit}
-                        className="w-full py-4 rounded-xl bg-green-600 hover:bg-green-700 font-semibold flex items-center justify-center gap-2 transition"
+                        onClick={handleSubmit}
+                        disabled={submitting || !location}
+                        className="w-full py-5 rounded-2xl bg-white hover:bg-gray-200 text-black font-bold text-lg flex items-center justify-center gap-3 transition shadow-xl shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed mt-4"
                     >
-                        <Send className="w-5 h-5" />
-                        <span>ส่งรายงาน</span>
+                        {submitting ? (
+                            <Loader className="w-6 h-6 animate-spin" />
+                        ) : (
+                            <>
+                                <Send className="w-6 h-6" />
+                                <span>SUBMIT REPORT</span>
+                            </>
+                        )}
                     </button>
+
+                    <div className="h-4"></div>
                 </div>
             </div>
         </div>
