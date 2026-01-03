@@ -19,6 +19,8 @@ import {
     ChevronRight,
 } from 'lucide-react';
 
+import NotificationBell from '@/components/NotificationBell';
+
 export default function DashboardLayout({
     children,
 }: {
@@ -82,12 +84,16 @@ export default function DashboardLayout({
                             </div>
                         )}
                     </div>
-                    <button
-                        onClick={() => setCollapsed(!collapsed)}
-                        className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition"
-                    >
-                        {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                    </button>
+
+                    <div className="flex items-center gap-2">
+                        <NotificationBell />
+                        <button
+                            onClick={() => setCollapsed(!collapsed)}
+                            className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white transition"
+                        >
+                            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Nav items */}
