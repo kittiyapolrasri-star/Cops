@@ -10,10 +10,10 @@ echo ""
 
 # Define ports to check (Default values)
 PORTS=(
-  3000  # Frontend
-  4000  # Backend
-  5432  # PostgreSQL
-  6379  # Redis
+  3005  # Frontend
+  4005  # Backend
+  5434  # PostgreSQL
+  6380  # Redis
   8085  # Nginx HTTP
   9443  # Nginx HTTPS
 )
