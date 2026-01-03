@@ -14,8 +14,8 @@ PORTS=(
   4000  # Backend
   5432  # PostgreSQL
   6379  # Redis
-  80    # Nginx HTTP
-  443   # Nginx HTTPS
+  8085  # Nginx HTTP
+  9443  # Nginx HTTPS
 )
 
 # Service Names for display
