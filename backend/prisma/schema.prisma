@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum UserRole {
+  PATROL        // สายตรวจ
+  STATION       // ระดับโรงพัก
+  PROVINCE      // ระดับจังหวัด
+  BUREAU        // ระดับกองบัญชาการ
+  HQ            // ระดับ สตช.
+}
+
+enum IncidentType {
+  PREVENTION    // งานป้องกัน (เหตุปกติ)
+  SUPPRESSION   // งานปราบปราม (ผลการจับกุม)
+}
+
+enum IncidentCategory {
+  TRAFFIC       // ยานพาหนะ
+  DRUGS         // ยาเสพติด
+  WEAPONS       // อาวุธ
+  OTHERS        // อื่นๆ
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ==================== ORGANIZATION HIERARCHY ====================
+
+model Bureau {
+  id          String     @id @default(uuid())
+  name        String
+  code        String     @unique
+  provinces   Province[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Province {
+  id          String    @id @default(uuid())
+  name        String
+  code        String    @unique
+  bureauId    String
+  bureau      Bureau    @relation(fields: [bureauId], references: [id])
+  stations    Station[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Station {
+  id          String      @id @default(uuid())
+  name        String
+  code        String      @unique
+  address     String?
+  latitude    Float?
+  longitude   Float?
+  provinceId  String
+  province    Province    @relation(fields: [provinceId], references: [id])
+  users       User[]
+  riskZones   RiskZone[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// ==================== USER ====================
+
+model User {
+  id            String         @id @default(uuid())
+  username      String         @unique
+  password      String
+  firstName     String
+  lastName      String
+  rank          String?        // ยศ
+  position      String?        // ตำแหน่ง
+  phone         String?
+  avatar        String?
+  role          UserRole       @default(PATROL)
+  stationId     String?
+  station       Station?       @relation(fields: [stationId], references: [id])
+  isActive      Boolean        @default(true)
+  patrolRoutes  PatrolRoute[]
+  checkIns      CheckIn[]
+  incidents     Incident[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// ==================== PATROL TRACKING ====================
+
+model PatrolRoute {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  startedAt   DateTime        @default(now())
+  endedAt     DateTime?
+  isActive    Boolean         @default(true)
+  locations   PatrolLocation[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model PatrolLocation {
+  id            String      @id @default(uuid())
+  patrolRouteId String
+  patrolRoute   PatrolRoute @relation(fields: [patrolRouteId], references: [id], onDelete: Cascade)
+  latitude      Float
+  longitude     Float
+  accuracy      Float?
+  speed         Float?
+  heading       Float?
+  timestamp     DateTime    @default(now())
+}
+
+model CheckIn {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  riskZoneId  String?
+  riskZone    RiskZone? @relation(fields: [riskZoneId], references: [id])
+  latitude    Float
+  longitude   Float
+  note        String?
+  photo       String?
+  timestamp   DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+}
+
+// ==================== RISK ZONES ====================
+
+model RiskZone {
+  id                  String      @id @default(uuid())
+  name                String
+  description         String?
+  latitude            Float
+  longitude           Float
+  radius              Float       @default(50)  // รัศมีในเมตร
+  riskLevel           RiskLevel   @default(MEDIUM)
+  requiredCheckIns    Int         @default(4)   // จำนวนครั้งที่ต้องตรวจต่อวัน
+  stationId           String
+  station             Station     @relation(fields: [stationId], references: [id])
+  checkIns            CheckIn[]
+  isActive            Boolean     @default(true)
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+}
+
+// ==================== INCIDENTS ====================
+
+model Incident {
+  id            String           @id @default(uuid())
+  type          IncidentType
+  userId        String
+  user          User             @relation(fields: [userId], references: [id])
+  latitude      Float
+  longitude     Float
+  address       String?
+  description   String?
+  photos        String[]         // Array of photo URLs
+  items         IncidentItem[]
+  isResolved    Boolean          @default(false)
+  resolvedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model IncidentItem {
+  id          String            @id @default(uuid())
+  incidentId  String
+  incident    Incident          @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+  category    IncidentCategory
+  itemType    String            // เช่น "ยาบ้า", "ปืนไทยประดิษฐ์", "ไม่ติดแผ่นป้ายทะเบียน"
+  quantity    Int?              // จำนวน (ถ้ามี)
+  unit        String?           // หน่วย เช่น "เม็ด", "กรัม"
+  description String?
+  photo       String?
+  createdAt   DateTime          @default(now())
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id          String    @id @default(uuid())
+  title       String
+  message     String
+  type        String    // incident, alert, info
+  data        Json?     // Additional data
+  isRead      Boolean   @default(false)
+  userId      String?   // Target user (null = broadcast)
+  stationId   String?   // Target station
+  createdAt   DateTime  @default(now())
+}
