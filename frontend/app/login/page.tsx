@@ -126,7 +126,7 @@ export default function LoginPage() {
                                 <span>กำลังเชื่อมต่อ...</span>
                             </div>
                         ) : (
-                            'เข้าสู่ระบบ'
+                            'LOGIN'
                         )}
                     </button>
                 </form>
