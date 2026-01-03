@@ -41,7 +41,8 @@ docker-compose -f docker-compose.prod.yml up -d --build
 
 ### 5. Access System
 
-- **Dashboard:** `http://[YOUR_VM_IP]:8085` (Default port in .env.production.example)
+- **Dashboard (HTTP):** `http://[YOUR_VM_IP]:8085`
+- **Dashboard (HTTPS):** `https://[YOUR_VM_IP]:9443` (Accept Security Warning)
 - **Backend API:** `http://[YOUR_VM_IP]:4005`
 
 ## 🛠 Directory Structure
