@@ -73,6 +73,7 @@ export const incidentApi = {
         api.get('/incidents/feed', { params: { stationId, limit } }),
     getStats: (stationId?: string) =>
         api.get('/incidents/stats', { params: { stationId } }),
+    resolve: (id: string) => api.patch(`/incidents/${id}/resolve`),
 };
 
 export const riskzoneApi = {
