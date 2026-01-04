@@ -4,17 +4,18 @@ import { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { trackingApi, riskzoneApi, organizationApi } from '@/lib/api';
-import { Building2, Radio, AlertTriangle, MapPin, Eye, EyeOff, Search, X, Crosshair } from 'lucide-react';
+import { Building2, Radio, AlertTriangle, MapPin, Eye, EyeOff, Search, X, Crosshair, Info } from 'lucide-react';
 import { searchLocation } from '@/lib/geocoding';
 
 // ==================== ICONS ====================
 
-const createStationIcon = (name: string, patrolCount: number, isSelected: boolean) => {
-    const bgColor = isSelected ? '#10b981' : '#3b82f6';
-    const borderColor = isSelected ? '#34d399' : '#60a5fa';
+const createStationIcon = (name: string, patrolCount: number, isSelected: boolean, isDimmed: boolean) => {
+    const bgColor = isSelected ? '#10b981' : isDimmed ? '#3b82f650' : '#3b82f6';
+    const borderColor = isSelected ? '#34d399' : isDimmed ? '#60a5fa50' : '#60a5fa';
+    const opacity = isDimmed ? '0.4' : '1';
     return new L.DivIcon({
         html: `
-            <div class="relative group cursor-pointer">
+            <div class="relative group cursor-pointer" style="opacity: ${opacity}">
                 <div class="w-8 h-8 rounded-lg ${isSelected ? 'scale-125' : ''}" style="background: ${bgColor}; border: 2px solid ${borderColor}; box-shadow: 0 0 12px ${bgColor}50;">
                     <div class="w-full h-full flex items-center justify-center">
                         <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -149,29 +150,65 @@ export default function FullMapContent() {
         return counts;
     }, [patrols]);
 
-    // Filtered stations
+    // Filtered stations (only selected province)
     const filteredStations = useMemo(() => {
         let result = stations;
         if (selectedProvince) {
             result = result.filter(s => s.provinceId === selectedProvince);
         }
-        if (selectedBureau) {
+        if (selectedBureau && !selectedProvince) {
             const bureauProvinces = provinces.filter(p => p.bureauId === selectedBureau).map(p => p.id);
             result = result.filter(s => bureauProvinces.includes(s.provinceId));
         }
         return result;
     }, [stations, selectedProvince, selectedBureau, provinces]);
 
-    // Province center lookup
+    // Province center and bounding calculation
+    const provinceInfo = useMemo(() => {
+        if (!selectedProvince) return null;
+
+        const provinceStations = stations.filter(s => s.provinceId === selectedProvince);
+        if (provinceStations.length === 0) return null;
+
+        const province = provinces.find(p => p.id === selectedProvince);
+
+        // Calculate center and radius based on stations
+        const lats = provinceStations.map(s => s.latitude);
+        const lngs = provinceStations.map(s => s.longitude);
+        const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+        const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+
+        // Calculate approximate radius (in meters) based on spread
+        const latSpread = Math.max(...lats) - Math.min(...lats);
+        const lngSpread = Math.max(...lngs) - Math.min(...lngs);
+        const spreadDegrees = Math.max(latSpread, lngSpread, 0.3); // minimum 0.3 degrees
+        const radiusKm = spreadDegrees * 111 / 2 + 10; // degrees to km + padding
+
+        // Count stats
+        const provinceRiskZones = riskZones.filter(z =>
+            provinceStations.some(s => s.id === z.stationId)
+        );
+        const provincePatrols = patrols.filter(p =>
+            provinceStations.some(s => s.id === p.user?.stationId)
+        );
+
+        return {
+            province,
+            center: [centerLat, centerLng] as [number, number],
+            radius: radiusKm * 1000, // convert to meters
+            stationCount: provinceStations.length,
+            riskZoneCount: provinceRiskZones.length,
+            patrolCount: provincePatrols.length,
+        };
+    }, [selectedProvince, stations, provinces, riskZones, patrols]);
+
+    // Auto-zoom when province selected
     useEffect(() => {
-        if (selectedProvince) {
-            const provinceStations = stations.filter(s => s.provinceId === selectedProvince);
-            if (provinceStations.length > 0) {
-                setCenter([provinceStations[0].latitude, provinceStations[0].longitude]);
-                setZoom(10);
-            }
+        if (provinceInfo) {
+            setCenter(provinceInfo.center);
+            setZoom(provinceInfo.stationCount > 5 ? 9 : 10);
         }
-    }, [selectedProvince, stations]);
+    }, [provinceInfo]);
 
     // Station click handler
     const handleStationClick = (station: any) => {
@@ -234,7 +271,10 @@ export default function FullMapContent() {
                 <select
                     value={selectedProvince}
                     onChange={(e) => setSelectedProvince(e.target.value)}
-                    className="px-3 py-2 bg-gray-900/95 border border-gray-700 rounded-lg text-white text-sm"
+                    className={`px-3 py-2 border rounded-lg text-white text-sm ${selectedProvince
+                            ? 'bg-emerald-900/80 border-emerald-500'
+                            : 'bg-gray-900/95 border-gray-700'
+                        }`}
                 >
                     <option value="">ทุกจังหวัด</option>
                     {provinces
@@ -253,6 +293,34 @@ export default function FullMapContent() {
                     รีเซ็ต
                 </button>
             </div>
+
+            {/* Province Info Panel (shows when province is selected) */}
+            {provinceInfo && (
+                <div className="absolute top-20 left-4 z-[500] bg-emerald-900/95 backdrop-blur-md border border-emerald-500 rounded-xl p-4 shadow-2xl">
+                    <div className="flex items-center gap-2 mb-3">
+                        <MapPin className="w-5 h-5 text-emerald-400" />
+                        <h3 className="font-bold text-white">{provinceInfo.province?.name}</h3>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="text-center bg-black/30 rounded-lg p-2">
+                            <p className="text-xl font-bold text-blue-400">{provinceInfo.stationCount}</p>
+                            <p className="text-[10px] text-gray-400">สถานี</p>
+                        </div>
+                        <div className="text-center bg-black/30 rounded-lg p-2">
+                            <p className="text-xl font-bold text-cyan-400">{provinceInfo.patrolCount}</p>
+                            <p className="text-[10px] text-gray-400">สายตรวจ</p>
+                        </div>
+                        <div className="text-center bg-black/30 rounded-lg p-2">
+                            <p className="text-xl font-bold text-amber-400">{provinceInfo.riskZoneCount}</p>
+                            <p className="text-[10px] text-gray-400">จุดเสี่ยง</p>
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-emerald-300 mt-2 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        คลิกที่สถานีเพื่อดูรายละเอียด
+                    </p>
+                </div>
+            )}
 
             {/* Legend Panel */}
             <div className="absolute top-20 right-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl w-48">
@@ -329,7 +397,7 @@ export default function FullMapContent() {
             {/* Stats Bar */}
             <div className="absolute bottom-4 right-4 z-[500] flex gap-3">
                 <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-blue-400">{stations.length}</p>
+                    <p className="text-lg font-bold text-blue-400">{selectedProvince ? filteredStations.length : stations.length}</p>
                     <p className="text-[10px] text-gray-500">สถานี</p>
                 </div>
                 <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 text-center">
@@ -359,15 +427,55 @@ export default function FullMapContent() {
                 <MapController center={center} zoom={zoom} />
                 <ZoomHandler onZoomChange={setCurrentZoom} />
 
-                {/* Stations */}
-                {showStations && filteredStations.map((station) => (
+                {/* Province Highlight Circle */}
+                {provinceInfo && (
+                    <Circle
+                        center={provinceInfo.center}
+                        radius={provinceInfo.radius}
+                        pathOptions={{
+                            color: '#10b981',
+                            fillColor: '#10b981',
+                            fillOpacity: 0.08,
+                            weight: 3,
+                            dashArray: '10, 5',
+                        }}
+                    />
+                )}
+
+                {/* All Stations (dimmed if province is selected) */}
+                {showStations && !selectedProvince && stations.map((station) => (
                     <Marker
                         key={station.id}
                         position={[station.latitude, station.longitude]}
                         icon={createStationIcon(
                             station.name,
                             patrolCountByStation[station.id] || 0,
-                            selectedStation?.id === station.id
+                            selectedStation?.id === station.id,
+                            false
+                        )}
+                        eventHandlers={{
+                            click: () => handleStationClick(station)
+                        }}
+                    >
+                        <Popup>
+                            <div className="p-2">
+                                <h4 className="font-bold text-white text-sm">{station.name}</h4>
+                                <p className="text-xs text-gray-400">{station.province?.name}</p>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+
+                {/* Filtered Stations (when province selected) */}
+                {showStations && selectedProvince && filteredStations.map((station) => (
+                    <Marker
+                        key={station.id}
+                        position={[station.latitude, station.longitude]}
+                        icon={createStationIcon(
+                            station.name,
+                            patrolCountByStation[station.id] || 0,
+                            selectedStation?.id === station.id,
+                            false
                         )}
                         eventHandlers={{
                             click: () => handleStationClick(station)
@@ -383,7 +491,7 @@ export default function FullMapContent() {
                 ))}
 
                 {/* Risk Zones */}
-                {showRiskZones && currentZoom >= 12 && riskZones
+                {showRiskZones && currentZoom >= 11 && riskZones
                     .filter(z => !selectedProvince || filteredStations.some(s => s.id === z.stationId))
                     .map((zone) => (
                         <Circle
@@ -393,7 +501,7 @@ export default function FullMapContent() {
                             pathOptions={{
                                 color: getRiskColor(zone.riskLevel),
                                 fillColor: getRiskColor(zone.riskLevel),
-                                fillOpacity: 0.2,
+                                fillOpacity: 0.25,
                                 weight: 2,
                             }}
                         >
@@ -401,6 +509,7 @@ export default function FullMapContent() {
                                 <div className="p-2">
                                     <h4 className="font-bold text-white text-sm">{zone.name}</h4>
                                     <p className="text-xs text-gray-400">{zone.description}</p>
+                                    <span className="text-[10px] mt-1 inline-block px-2 py-0.5 rounded" style={{ background: getRiskColor(zone.riskLevel) + '30', color: getRiskColor(zone.riskLevel) }}>{zone.riskLevel}</span>
                                 </div>
                             </Popup>
                         </Circle>
@@ -410,6 +519,13 @@ export default function FullMapContent() {
                 {showPatrols && currentZoom >= 10 && patrols.map((patrol) => {
                     const loc = patrol.locations?.[0];
                     if (!loc) return null;
+
+                    // Filter patrols by province if selected
+                    if (selectedProvince) {
+                        const patrolStation = stations.find(s => s.id === patrol.user?.stationId);
+                        if (patrolStation?.provinceId !== selectedProvince) return null;
+                    }
+
                     return (
                         <Marker
                             key={patrol.id}
