@@ -49,7 +49,7 @@ export default function DashboardLayout({
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'แผนที่ยุทธวิธี', href: '/dashboard/map', icon: Map },
+        // { name: 'แผนที่ยุทธวิธี', href: '/dashboard/map', icon: Map }, // Hidden - merged into Dashboard
         { name: 'พื้นที่เสี่ยง', href: '/dashboard/riskzones', icon: AlertTriangle },
         { name: 'รายงานเหตุการณ์', href: '/dashboard/incidents', icon: FileText },
         { name: 'ผู้ใช้งาน', href: '/dashboard/users', icon: User },
