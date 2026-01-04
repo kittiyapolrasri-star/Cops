@@ -13,6 +13,7 @@ import {
     CheckCircle,
     BarChart3
 } from 'lucide-react';
+import AddRiskZoneModal from '@/components/AddRiskZoneModal';
 
 interface RiskZone {
     id: string;
@@ -32,6 +33,7 @@ export default function RiskZonesPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<'ALL' | 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'>('ALL');
     const [checkInFrequency, setCheckInFrequency] = useState<any[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -91,6 +93,13 @@ export default function RiskZonesPage() {
                     </h1>
                     <p className="text-gray-400 text-sm mt-1">Monitor and manage high-risk patrol areas</p>
                 </div>
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-lg transition shadow-lg shadow-amber-500/20"
+                >
+                    <Plus className="w-4 h-4" />
+                    Add Zone
+                </button>
             </div>
 
             {/* Stats Cards */}
@@ -219,6 +228,12 @@ export default function RiskZonesPage() {
                     })
                 )}
             </div>
+
+            <AddRiskZoneModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSuccess={fetchData}
+            />
         </div>
     );
 }

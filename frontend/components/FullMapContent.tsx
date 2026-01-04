@@ -384,6 +384,7 @@ export default function FullMapContent() {
 
     return (
         <div className="h-[calc(100vh-64px)] w-full relative bg-gray-950">
+
             {/* Top Controls */}
             <div className="absolute top-4 left-4 right-4 z-[500] flex gap-3">
                 {/* Search */}
