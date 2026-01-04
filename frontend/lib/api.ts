@@ -87,6 +87,8 @@ export const riskzoneApi = {
 };
 
 export const organizationApi = {
+    getBureaus: () => api.get('/organization/bureaus'),
+    getProvinces: (bureauId?: string) => api.get('/organization/provinces', { params: { bureauId } }),
     getStations: (provinceId?: string) =>
         api.get('/organization/stations', { params: { provinceId } }),
     getHierarchy: () => api.get('/organization/hierarchy'),

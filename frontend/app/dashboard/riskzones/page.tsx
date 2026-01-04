@@ -41,7 +41,7 @@ export default function RiskZonesPage() {
         try {
             const [zonesRes, freqRes] = await Promise.all([
                 riskzoneApi.getAll(),
-                checkinApi.getFrequency()
+                checkinApi.getRecent()
             ]);
             if (zonesRes.data) setRiskZones(zonesRes.data);
             if (freqRes.data) setCheckInFrequency(freqRes.data);
@@ -139,8 +139,8 @@ export default function RiskZonesPage() {
                         key={level}
                         onClick={() => setFilter(level as any)}
                         className={`px-4 py-1.5 rounded-md text-sm font-medium transition ${filter === level
-                                ? 'bg-gray-700 text-white shadow'
-                                : 'text-gray-400 hover:text-white'
+                            ? 'bg-gray-700 text-white shadow'
+                            : 'text-gray-400 hover:text-white'
                             }`}
                     >
                         {level}
@@ -201,7 +201,7 @@ export default function RiskZonesPage() {
                                             <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
                                                 <div
                                                     className={`h-full transition-all duration-500 ${progress >= 100 ? 'bg-emerald-500' :
-                                                            progress >= 50 ? 'bg-amber-500' : 'bg-rose-500'
+                                                        progress >= 50 ? 'bg-amber-500' : 'bg-rose-500'
                                                         }`}
                                                     style={{ width: `${progress}%` }}
                                                 />
