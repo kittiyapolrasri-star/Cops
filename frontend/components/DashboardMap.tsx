@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, GeoJSON, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, GeoJSON, useMap, useMapEvents, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { trackingApi, riskzoneApi, organizationApi } from '@/lib/api';
 import {
@@ -574,17 +574,42 @@ export default function DashboardMap() {
                     </Marker>
                 ))}
 
+                {/* Historical Patrol Trails (Time Mode) */}
+                {timeMode === 'historical' && filteredPatrols.map((patrol) => {
+                    const locations = patrol.locations?.map((l: any) => [l.latitude, l.longitude]) || [];
+                    if (locations.length < 2) return null;
+                    return (
+                        <Polyline
+                            key={`trail-${patrol.id}`}
+                            positions={locations}
+                            pathOptions={{
+                                color: '#f59e0b', // Amber for history
+                                weight: 3,
+                                opacity: 0.6,
+                                dashArray: '5, 10'
+                            }}
+                        />
+                    );
+                })}
+
                 {/* Patrols */}
                 {showPatrols && zoomShowPatrols && filteredPatrols.map((patrol) => (
                     <Marker
                         key={patrol.id}
-                        position={[patrol.currentLocation.latitude, patrol.currentLocation.longitude]}
-                        icon={createPatrolIcon(patrol.user?.rank || 'N/A', true)}
+                        position={
+                            timeMode === 'historical' && patrol.locations?.[0]
+                                ? [patrol.locations[0].latitude, patrol.locations[0].longitude]
+                                : [patrol.currentLocation?.latitude || patrol.latitude, patrol.currentLocation?.longitude || patrol.longitude]
+                        }
+                        icon={createPatrolIcon(patrol.user?.rank || 'N/A', timeMode === 'live')}
                     >
                         <Popup>
                             <div className="bg-gray-900 text-white p-2 rounded">
                                 <p className="font-bold text-sm">{patrol.user?.rank} {patrol.user?.firstName}</p>
                                 <p className="text-xs text-gray-400">{patrol.user?.station?.name}</p>
+                                {timeMode === 'historical' && (
+                                    <p className="text-xs text-amber-500 mt-1">🕒 Historical Path</p>
+                                )}
                             </div>
                         </Popup>
                     </Marker>

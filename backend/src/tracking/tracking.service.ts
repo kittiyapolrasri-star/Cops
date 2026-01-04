@@ -162,7 +162,7 @@ export class TrackingService {
                 },
                 locations: {
                     orderBy: { timestamp: 'desc' },
-                    take: 50, // Last 50 locations per patrol
+                    take: 1000, // Increased to support 24h history (approx 8h shift at 30s interval)
                 },
             },
             orderBy: { startedAt: 'desc' },
