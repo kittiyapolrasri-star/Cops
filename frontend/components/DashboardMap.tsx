@@ -244,9 +244,24 @@ export default function DashboardMap() {
     const handleBureauSelect = (bureauId: string) => {
         setSelectedBureau(bureauId);
         setSelectedProvince('');
+        setSelectedStation(null);
+        setSelectedResult(null);
+
         if (!bureauId) {
+            // Reset to Thailand view
             setCenter(THAILAND_CENTER);
             setCurrentZoom(6);
+        } else {
+            // Calculate center of all provinces in this bureau
+            const bureauProvinces = provinces.filter((p) => p.bureauId === bureauId);
+            if (bureauProvinces.length > 0) {
+                const avgLat = bureauProvinces.reduce((sum, p) => sum + (p.latitude || 0), 0) / bureauProvinces.length;
+                const avgLng = bureauProvinces.reduce((sum, p) => sum + (p.longitude || 0), 0) / bureauProvinces.length;
+                if (avgLat && avgLng) {
+                    setCenter([avgLat, avgLng]);
+                    setCurrentZoom(ZOOM_LEVELS.REGION);
+                }
+            }
         }
     };
 
@@ -255,7 +270,18 @@ export default function DashboardMap() {
         if (result.lat && result.lng) {
             setCenter([result.lat, result.lng]);
             setSelectedResult(result);
-            if (result.type === 'station') setSelectedStation(result.id);
+
+            // Set zoom level based on result type
+            if (result.type === 'station') {
+                setSelectedStation(result.id);
+                setCurrentZoom(ZOOM_LEVELS.STATION);
+            } else if (result.type === 'riskzone') {
+                setCurrentZoom(ZOOM_LEVELS.DISTRICT);
+            } else if (result.type === 'patrol') {
+                setCurrentZoom(ZOOM_LEVELS.STREET);
+            } else {
+                setCurrentZoom(ZOOM_LEVELS.DISTRICT);
+            }
         }
     };
 
