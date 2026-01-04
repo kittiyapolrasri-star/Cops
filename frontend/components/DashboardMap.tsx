@@ -177,6 +177,22 @@ export default function DashboardMap() {
         return () => clearInterval(interval);
     }, []);
 
+    // Listen for flyToLocation events from PriorityFeed
+    useEffect(() => {
+        const handleFlyTo = (event: CustomEvent<{ lat: number; lng: number; zoom?: number }>) => {
+            const { lat, lng, zoom } = event.detail;
+            if (lat && lng) {
+                setCenter([lat, lng]);
+                if (zoom) {
+                    setCurrentZoom(zoom);
+                }
+            }
+        };
+
+        window.addEventListener('flyToLocation', handleFlyTo as EventListener);
+        return () => window.removeEventListener('flyToLocation', handleFlyTo as EventListener);
+    }, []);
+
     // Count patrols per station
     const patrolCountByStation = useMemo(() => {
         const counts: Record<string, number> = {};

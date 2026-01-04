@@ -1,30 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/lib/store/auth';
-import { api, checkinApi, incidentApi, riskzoneApi, trackingApi } from '@/lib/api';
-import {
-    Users,
-    MapPin,
-    FileText,
-    AlertTriangle,
-    CheckCircle,
-    Radio,
-    Bell,
-    Activity,
-    Shield,
-    Layers,
-} from 'lucide-react';
-import Image from 'next/image';
+import { checkinApi, incidentApi, riskzoneApi, trackingApi } from '@/lib/api';
+import { Activity, Clock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
+// Dynamic imports (no SSR for map components)
 const DashboardMap = dynamic(() => import('@/components/DashboardMap'), { ssr: false });
-const FeedStream = dynamic(() => import('@/components/FeedStream'), { ssr: false });
+const FloatingStatsHUD = dynamic(() => import('@/components/FloatingStatsHUD'), { ssr: false });
+const PriorityFeed = dynamic(() => import('@/components/PriorityFeed'), { ssr: false });
 const NotificationBell = dynamic(() => import('@/components/NotificationBell'), { ssr: false });
 
 export default function DashboardPage() {
     const { user } = useAuthStore();
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [feedCollapsed, setFeedCollapsed] = useState(false);
+    const [mapRef, setMapRef] = useState<any>(null);
 
     // Real stats state
     const [stats, setStats] = useState({
@@ -42,10 +34,9 @@ export default function DashboardPage() {
                     trackingApi.getActivePatrols(),
                     incidentApi.getStats(),
                     riskzoneApi.getAll(),
-                    checkinApi.getRecent(undefined, 100) // Getting recent checkins to count for today roughly
+                    checkinApi.getRecent(undefined, 100)
                 ]);
 
-                // Simple mock counting for checkins today since stats endpoint might not exist yet
                 const todayCheckins = checkins.data.filter((c: any) => {
                     const date = new Date(c.timestamp);
                     const today = new Date();
@@ -54,7 +45,7 @@ export default function DashboardPage() {
 
                 setStats({
                     activePatrols: activePatrols.data.length || 0,
-                    checkinsToday: todayCheckins, // Using calculated value
+                    checkinsToday: todayCheckins,
                     incidentsToday: incidentsStats.data?.total || 0,
                     riskZones: riskZones.data.length || 0,
                 });
@@ -64,7 +55,7 @@ export default function DashboardPage() {
         };
 
         fetchData();
-        const interval = setInterval(fetchData, 30000); // Refresh every 30s
+        const interval = setInterval(fetchData, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -74,145 +65,68 @@ export default function DashboardPage() {
         return () => clearInterval(timer);
     }, []);
 
-    const statCards = [
-        {
-            title: 'ACTIVE PATROLS',
-            value: stats.activePatrols,
-            icon: Radio,
-            color: 'text-emerald-400',
-            border: 'border-emerald-500/20',
-            bg_glow: 'shadow-[0_0_20px_-5px_rgba(52,211,153,0.1)]',
-        },
-        {
-            title: 'CHECK-INS',
-            value: stats.checkinsToday,
-            icon: MapPin,
-            color: 'text-sky-400',
-            border: 'border-sky-500/20',
-            bg_glow: 'shadow-[0_0_20px_-5px_rgba(56,189,248,0.1)]',
-        },
-        {
-            title: 'INCIDENTS',
-            value: stats.incidentsToday,
-            icon: AlertTriangle,
-            color: 'text-rose-400',
-            border: 'border-rose-500/20',
-            bg_glow: 'shadow-[0_0_20px_-5px_rgba(251,113,133,0.1)]',
-        },
-        {
-            title: 'RISK ZONES',
-            value: stats.riskZones,
-            icon: Shield,
-            color: 'text-amber-400',
-            border: 'border-amber-500/20',
-            bg_glow: 'shadow-[0_0_20px_-5px_rgba(251,191,36,0.1)]',
-        },
-    ];
+    // Auto-fly handler for PriorityFeed
+    const handleFlyTo = useCallback((lat: number, lng: number) => {
+        // This will be passed to the map component
+        // For now, we'll emit a custom event that the map can listen to
+        const event = new CustomEvent('flyToLocation', { detail: { lat, lng, zoom: 15 } });
+        window.dispatchEvent(event);
+    }, []);
 
     return (
-        <div className="min-h-screen bg-[#050505] text-gray-200 font-sans selection:bg-gray-800">
-            {/* Header */}
-            <header className="px-8 py-5 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md sticky top-0 z-40">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-6">
+        <div className="h-[calc(100vh-64px)] w-full relative overflow-hidden bg-[#050505]">
+            {/* ===== FULL-SCREEN MAP (God's Eye View) ===== */}
+            <div className="absolute inset-0">
+                <DashboardMap />
+            </div>
 
-                        <div>
-                            <h1 className="text-2xl font-bold text-white tracking-tight">C.O.P.S. <span className="font-light text-gray-500">Center</span></h1>
-                            <p className="text-xs text-gray-400 uppercase tracking-widest font-semibold opacity-70">Command Operations</p>
-                        </div>
-                    </div>
+            {/* ===== FLOATING STATS HUD (Top Center) ===== */}
+            <FloatingStatsHUD stats={stats} />
 
-                    <div className="flex items-center gap-8">
-                        {/* Notification Bell */}
-                        <NotificationBell />
+            {/* ===== LIVE SURVEILLANCE BADGE (Top Left) ===== */}
+            <div className="absolute top-4 left-4 z-[500] bg-black/70 backdrop-blur-xl border border-emerald-500/30 px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-emerald-500/10">
+                <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
+                <span className="text-xs font-bold text-white tracking-wider">GOD'S EYE VIEW</span>
+                <div className="h-4 w-px bg-white/20"></div>
+                <span className="text-xs text-gray-400 font-mono">
+                    {currentTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+            </div>
 
-                        {/* Live Status */}
-                        <div className="flex items-center gap-3">
-                            <span className="relative flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-sm font-bold text-emerald-500 tracking-wider">SYSTEM ONLINE</span>
-                        </div>
-
-                        <div className="h-8 w-px bg-white/10"></div>
-
-                        {/* Time */}
-                        <div className="text-right">
-                            <p className="text-2xl font-bold text-white font-mono leading-none">
-                                {currentTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                            <p className="text-xs text-gray-500 font-medium uppercase mt-1">
-                                {currentTime.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </p>
-                        </div>
-
-                        <div className="h-8 w-px bg-white/10"></div>
-
-                        {/* Profile */}
-                        <div className="flex items-center gap-4">
-                            <div className="text-right hidden md:block">
-                                <p className="text-sm font-bold text-white">{user?.rank} {user?.firstName}</p>
-                                <p className="text-xs text-gray-500">{user?.role}</p>
-                            </div>
-                            <div className="w-10 h-10 rounded-full bg-gray-900 border border-white/10 flex items-center justify-center">
-                                <span className="text-sm font-bold text-white">{user?.firstName?.charAt(0)}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            {/* Main Content */}
-            <div className="p-4 space-y-4">
-                {/* KPI Cards */}
-                <div className="grid grid-cols-4 gap-6">
-                    {statCards.map((stat, index) => (
-                        <div
-                            key={index}
-                            className={`glass-card p-6 rounded-2xl relative overflow-hidden group hover:border-white/20 ${stat.bg_glow}`}
-                        >
-                            <div className="relative z-10 flex items-start justify-between">
-                                <div>
-                                    <p className="text-xs text-gray-500 font-bold tracking-widest mb-2">{stat.title}</p>
-                                    <p className="text-4xl font-bold text-white">{stat.value}</p>
-                                </div>
-                                <div className={`p-3 rounded-xl bg-white/5 border border-white/5 ${stat.color}`}>
-                                    <stat.icon className="w-6 h-6" />
-                                </div>
-                            </div>
-                            {/* Decorative gradient */}
-                            <div className={`absolute -bottom-10 -right-10 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full blur-2xl group-hover:bg-white/10 transition duration-500`} />
-                        </div>
-                    ))}
+            {/* ===== HEADER INFO (Top Right) ===== */}
+            <div className="absolute top-4 right-4 z-[500] flex items-center gap-3">
+                {/* Notification Bell */}
+                <div className="bg-black/70 backdrop-blur-xl rounded-xl p-2 border border-white/10">
+                    <NotificationBell />
                 </div>
 
-                {/* Ops Grid - Map 80%, Feed 20% */}
-                <div className="flex gap-4 h-[calc(100vh-280px)] min-h-[500px]">
-                    {/* Map - 80% */}
-                    <div className="flex-[4] glass-panel rounded-xl overflow-hidden flex flex-col relative">
-                        <div className="absolute top-3 left-3 z-[400] bg-black/80 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2">
-                            <Activity className="w-3 h-3 text-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-bold text-white tracking-wide">LIVE SURVEILLANCE</span>
-                        </div>
-
-                        <div className="flex-1 bg-[#111]">
-                            <DashboardMap />
-                        </div>
+                {/* User Profile */}
+                <div className="bg-black/70 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/10 flex items-center gap-3">
+                    <div className="text-right">
+                        <p className="text-sm font-bold text-white">{user?.rank} {user?.firstName}</p>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{user?.role}</p>
                     </div>
-
-                    {/* Feed - 20% */}
-                    <div className="w-72 flex-shrink-0 glass-panel rounded-xl flex flex-col overflow-hidden">
-                        <div className="p-3 border-b border-white/5 bg-white/[0.02]">
-                            <h3 className="text-xs font-bold text-white tracking-wider flex items-center gap-2">
-                                <Layers className="w-3 h-3 text-gray-400" />
-                                INCIDENT FEED
-                            </h3>
-                        </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <FeedStream />
-                        </div>
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center">
+                        <span className="text-sm font-bold text-white">{user?.firstName?.charAt(0)}</span>
                     </div>
+                </div>
+            </div>
+
+            {/* ===== PRIORITY FEED (Bottom Right - Collapsible) ===== */}
+            <PriorityFeed
+                onFlyTo={handleFlyTo}
+                isCollapsed={feedCollapsed}
+                onToggle={() => setFeedCollapsed(!feedCollapsed)}
+            />
+
+            {/* ===== ZOOM LEVEL / MAP INFO (Bottom Left) ===== */}
+            <div className="absolute bottom-4 left-4 z-[500] bg-black/70 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/10">
+                <div className="flex items-center gap-4 text-xs text-gray-400">
+                    <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {currentTime.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                    <span className="text-emerald-400 font-bold">● LIVE</span>
                 </div>
             </div>
         </div>
