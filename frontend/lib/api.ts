@@ -52,6 +52,8 @@ export const trackingApi = {
         api.get('/tracking/active', { params: { stationId } }),
     getLatestLocations: (stationId?: string) =>
         api.get('/tracking/latest', { params: { stationId } }),
+    getHistoricalPatrols: (stationId?: string, hours: number = 24) =>
+        api.get('/tracking/historical', { params: { stationId, hours } }),
 };
 
 export const checkinApi = {

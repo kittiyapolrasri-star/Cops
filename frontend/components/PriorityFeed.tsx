@@ -4,14 +4,23 @@ import { useState, useEffect } from 'react';
 import { AlertTriangle, MapPin, Clock, ChevronRight, X, Siren } from 'lucide-react';
 import { incidentApi } from '@/lib/api';
 
+interface IncidentItem {
+    id: string;
+    category: string;
+    itemType: string;
+    quantity?: number;
+    unit?: string;
+}
+
 interface Incident {
     id: string;
     type: string;
-    category: string;
     description: string;
     latitude: number;
     longitude: number;
     createdAt: string;
+    isResolved: boolean;
+    items?: IncidentItem[];
     user?: {
         firstName?: string;
         lastName?: string;
@@ -27,6 +36,14 @@ interface PriorityFeedProps {
     onToggle?: () => void;
 }
 
+// Get primary category from incident items
+const getIncidentCategory = (incident: Incident): string => {
+    if (incident.items && incident.items.length > 0) {
+        return incident.items[0].category;
+    }
+    return 'OTHERS';
+};
+
 export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }: PriorityFeedProps) {
     const [incidents, setIncidents] = useState<Incident[]>([]);
     const [loading, setLoading] = useState(true);
@@ -35,8 +52,9 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
         const fetchIncidents = async () => {
             try {
                 const response = await incidentApi.getAll();
-                // Sort by date descending and take latest 10
+                // Sort by date descending, filter unresolved, take latest 10
                 const sorted = (response.data || [])
+                    .filter((i: Incident) => !i.isResolved)
                     .sort((a: Incident, b: Incident) =>
                         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                     )
@@ -78,6 +96,7 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
             case 'DRUGS': return '💊';
             case 'WEAPONS': return '🔫';
             case 'TRAFFIC': return '🚗';
+            case 'OTHERS': return '📋';
             default: return '📋';
         }
     };
@@ -87,6 +106,7 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
             case 'DRUGS': return 'border-l-red-500 bg-red-500/5';
             case 'WEAPONS': return 'border-l-orange-500 bg-orange-500/5';
             case 'TRAFFIC': return 'border-l-yellow-500 bg-yellow-500/5';
+            case 'OTHERS': return 'border-l-blue-500 bg-blue-500/5';
             default: return 'border-l-blue-500 bg-blue-500/5';
         }
     };
@@ -141,34 +161,37 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
                     </div>
                 ) : (
                     <div className="divide-y divide-white/5">
-                        {incidents.map((incident) => (
-                            <button
-                                key={incident.id}
-                                onClick={() => handleClick(incident)}
-                                className={`w-full text-left px-4 py-3 hover:bg-white/5 transition-all border-l-2 ${getCategoryColor(incident.category)} group`}
-                            >
-                                <div className="flex items-start gap-3">
-                                    <span className="text-lg">{getCategoryIcon(incident.category)}</span>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm text-white font-medium truncate group-hover:text-emerald-400 transition">
-                                            {incident.description || 'รายงานเหตุการณ์'}
-                                        </p>
-                                        <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500">
-                                            <span className="flex items-center gap-1">
-                                                <MapPin className="w-3 h-3" />
-                                                {incident.user?.station?.name || 'ไม่ระบุ'}
-                                            </span>
-                                            <span>•</span>
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="w-3 h-3" />
-                                                {getTimeAgo(incident.createdAt)}
-                                            </span>
+                        {incidents.map((incident) => {
+                            const category = getIncidentCategory(incident);
+                            return (
+                                <button
+                                    key={incident.id}
+                                    onClick={() => handleClick(incident)}
+                                    className={`w-full text-left px-4 py-3 hover:bg-white/5 transition-all border-l-2 ${getCategoryColor(category)} group`}
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <span className="text-lg">{getCategoryIcon(category)}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm text-white font-medium truncate group-hover:text-emerald-400 transition">
+                                                {incident.description || 'รายงานเหตุการณ์'}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500">
+                                                <span className="flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {incident.user?.station?.name || 'ไม่ระบุ'}
+                                                </span>
+                                                <span>•</span>
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="w-3 h-3" />
+                                                    {getTimeAgo(incident.createdAt)}
+                                                </span>
+                                            </div>
                                         </div>
+                                        <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
                                     </div>
-                                    <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
-                                </div>
-                            </button>
-                        ))}
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
             </div>

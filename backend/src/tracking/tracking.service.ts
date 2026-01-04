@@ -137,4 +137,35 @@ export class TrackingService {
             },
         });
     }
+
+    // Get historical patrols (last 24 hours) for Time Mode
+    async getHistoricalPatrols(stationId?: string, hours: number = 24) {
+        const since = new Date();
+        since.setHours(since.getHours() - hours);
+
+        return this.prisma.patrolRoute.findMany({
+            where: {
+                startedAt: { gte: since },
+                ...(stationId && { user: { stationId } }),
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        rank: true,
+                        avatar: true,
+                        stationId: true,
+                        station: { select: { name: true, provinceId: true } },
+                    },
+                },
+                locations: {
+                    orderBy: { timestamp: 'desc' },
+                    take: 50, // Last 50 locations per patrol
+                },
+            },
+            orderBy: { startedAt: 'desc' },
+        });
+    }
 }

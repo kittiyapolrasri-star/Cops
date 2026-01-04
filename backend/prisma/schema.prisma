@@ -37,6 +37,15 @@ enum RiskLevel {
   CRITICAL
 }
 
+enum RiskCategory {
+  DRUGS         // ยาเสพติด
+  WEAPONS       // อาวุธ
+  TRAFFIC       // จราจร
+  VIOLENT       // ประทุษร้าย
+  THEFT         // ลักทรัพย์
+  OTHER         // อื่นๆ
+}
+
 // ==================== ORGANIZATION HIERARCHY ====================
 
 model Bureau {
@@ -140,20 +149,21 @@ model CheckIn {
 // ==================== RISK ZONES ====================
 
 model RiskZone {
-  id                  String      @id @default(uuid())
+  id                  String        @id @default(uuid())
   name                String
   description         String?
+  category            RiskCategory  @default(OTHER)  // ประเภทภัย
   latitude            Float
   longitude           Float
-  radius              Float       @default(50)  // รัศมีในเมตร
-  riskLevel           RiskLevel   @default(MEDIUM)
-  requiredCheckIns    Int         @default(4)   // จำนวนครั้งที่ต้องตรวจต่อวัน
+  radius              Float         @default(50)  // รัศมีในเมตร
+  riskLevel           RiskLevel     @default(MEDIUM)
+  requiredCheckIns    Int           @default(4)   // จำนวนครั้งที่ต้องตรวจต่อวัน
   stationId           String
-  station             Station     @relation(fields: [stationId], references: [id])
+  station             Station       @relation(fields: [stationId], references: [id])
   checkIns            CheckIn[]
-  isActive            Boolean     @default(true)
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  isActive            Boolean       @default(true)
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 }
 
 // ==================== INCIDENTS ====================

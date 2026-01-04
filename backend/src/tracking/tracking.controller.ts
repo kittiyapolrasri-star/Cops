@@ -41,6 +41,17 @@ export class TrackingController {
         );
     }
 
+    @Get('historical')
+    getHistoricalPatrols(
+        @Query('stationId') stationId?: string,
+        @Query('hours') hours?: string
+    ) {
+        return this.trackingService.getHistoricalPatrols(
+            stationId,
+            hours ? parseInt(hours) : 24
+        );
+    }
+
     @Get('route/:id')
     getRouteDetails(@Param('id') id: string) {
         return this.trackingService.getRouteDetails(id);

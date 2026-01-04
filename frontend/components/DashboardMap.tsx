@@ -113,11 +113,16 @@ export default function DashboardMap() {
     const zoomShowRiskZones = currentZoom >= 9;
     const zoomShowRiskDetails = currentZoom >= 13;
 
-    // Fetch data
+    // Fetch data based on time mode
     const fetchData = useCallback(async () => {
         try {
+            // Fetch patrols based on time mode (live vs historical)
+            const patrolPromise = timeMode === 'live'
+                ? trackingApi.getActivePatrols()
+                : trackingApi.getHistoricalPatrols(undefined, 24);
+
             const [patrolRes, riskRes, stationRes, bureauRes, provinceRes] = await Promise.all([
-                trackingApi.getActivePatrols(),
+                patrolPromise,
                 riskzoneApi.getAll(),
                 organizationApi.getStations(),
                 organizationApi.getBureaus(),
@@ -134,7 +139,7 @@ export default function DashboardMap() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [timeMode]);
 
     // Fetch GeoJSON
     useEffect(() => {
