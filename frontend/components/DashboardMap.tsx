@@ -16,27 +16,27 @@ const createStationIcon = (name: string, patrolCount: number, isSelected: boolea
     return new L.DivIcon({
         html: `
             <div class="relative group cursor-pointer">
-                <div class="w-12 h-12 rounded-xl ${isSelected ? 'scale-110' : ''}" style="background: ${bgColor}; border: 3px solid ${borderColor}; box-shadow: 0 0 20px ${bgColor}40;">
+                <div class="w-9 h-9 rounded-lg ${isSelected ? 'scale-110' : ''}" style="background: ${bgColor}; border: 2px solid ${borderColor}; box-shadow: 0 0 15px ${bgColor}40;">
                     <div class="w-full h-full flex items-center justify-center">
-                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
                         </svg>
                     </div>
                     ${patrolCount > 0 ? `
-                        <div class="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
-                            <span class="text-[10px] font-bold text-white">${patrolCount}</span>
+                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border border-white shadow-md">
+                            <span class="text-[8px] font-bold text-white">${patrolCount}</span>
                         </div>
                     ` : ''}
                 </div>
-                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-black/90 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
+                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-black/90 px-2 py-0.5 rounded text-[9px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
                     ${name.replace('สถานีตำรวจภูธร', 'สภ.')}
                 </div>
             </div>
         `,
         className: '',
-        iconSize: [48, 48],
-        iconAnchor: [24, 24],
-        popupAnchor: [0, -30],
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        popupAnchor: [0, -22],
     });
 };
 
@@ -46,18 +46,18 @@ const createPatrolIcon = (rank: string, isActive: boolean) => {
     return new L.DivIcon({
         html: `
             <div class="relative group">
-                <div class="w-10 h-10 bg-black/60 backdrop-blur-md rounded-full border-[3px] shadow-[0_0_15px_${color}] flex items-center justify-center" style="border-color: ${color};">
-                    <div class="w-3 h-3 rounded-full ${isActive ? 'animate-pulse' : ''}" style="background: ${color}; box-shadow: 0 0 10px ${color};"></div>
+                <div class="w-8 h-8 bg-black/60 backdrop-blur-md rounded-full border-2 shadow-[0_0_12px_${color}] flex items-center justify-center" style="border-color: ${color};">
+                    <div class="w-2 h-2 rounded-full ${isActive ? 'animate-pulse' : ''}" style="background: ${color}; box-shadow: 0 0 8px ${color};"></div>
                 </div>
-                <div class="absolute -bottom-7 left-1/2 -translate-x-1/2 bg-black/90 px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap" style="color: ${color};">
+                <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-black/90 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap" style="color: ${color};">
                     ${rank}
                 </div>
             </div>
         `,
         className: '',
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
-        popupAnchor: [0, -25],
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -20],
     });
 };
 
