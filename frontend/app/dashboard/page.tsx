@@ -164,7 +164,7 @@ export default function DashboardPage() {
             </header>
 
             {/* Main Content */}
-            <div className="p-8 space-y-8">
+            <div className="p-4 space-y-4">
                 {/* KPI Cards */}
                 <div className="grid grid-cols-4 gap-6">
                     {statCards.map((stat, index) => (
@@ -187,40 +187,25 @@ export default function DashboardPage() {
                     ))}
                 </div>
 
-                {/* Ops Grid */}
-                <div className="grid grid-cols-12 gap-6 h-[calc(100vh-320px)] min-h-[500px]">
-                    {/* Map - 9 cols */}
-                    <div className="col-span-9 glass-panel rounded-2xl overflow-hidden flex flex-col relative">
-                        <div className="absolute top-4 left-4 z-[400] bg-black/80 backdrop-blur-md border border-white/10 px-4 py-2 rounded-lg flex items-center gap-3">
-                            <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
-                            <span className="text-xs font-bold text-white tracking-wide">LIVE SURVEILLANCE</span>
+                {/* Ops Grid - Map 80%, Feed 20% */}
+                <div className="flex gap-4 h-[calc(100vh-280px)] min-h-[500px]">
+                    {/* Map - 80% */}
+                    <div className="flex-[4] glass-panel rounded-xl overflow-hidden flex flex-col relative">
+                        <div className="absolute top-3 left-3 z-[400] bg-black/80 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                            <Activity className="w-3 h-3 text-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-bold text-white tracking-wide">LIVE SURVEILLANCE</span>
                         </div>
 
                         <div className="flex-1 bg-[#111]">
                             <DashboardMap />
                         </div>
-
-                        {/* Map overlay stats (bottom) */}
-                        <div className="absolute bottom-6 left-6 right-6 z-[400] grid grid-cols-4 gap-4">
-                            {['Area A', 'Area B', 'Area C', 'Area D'].map((area, i) => (
-                                <div key={i} className="bg-black/60 backdrop-blur-md border border-white/10 p-3 rounded-lg">
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase">{area}</span>
-                                        <span className={`text-[10px] font-bold ${i === 1 ? 'text-amber-500' : 'text-emerald-500'}`}>{i === 1 ? 'MODERATE' : 'SECURE'}</span>
-                                    </div>
-                                    <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
-                                        <div className={`h-full ${i === 1 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: i === 1 ? '60%' : '95%' }}></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
 
-                    {/* Feed - 3 cols */}
-                    <div className="col-span-3 glass-panel rounded-2xl flex flex-col overflow-hidden">
-                        <div className="p-4 border-b border-white/5 bg-white/[0.02]">
-                            <h3 className="text-sm font-bold text-white tracking-wider flex items-center gap-2">
-                                <Layers className="w-4 h-4 text-gray-400" />
+                    {/* Feed - 20% */}
+                    <div className="w-72 flex-shrink-0 glass-panel rounded-xl flex flex-col overflow-hidden">
+                        <div className="p-3 border-b border-white/5 bg-white/[0.02]">
+                            <h3 className="text-xs font-bold text-white tracking-wider flex items-center gap-2">
+                                <Layers className="w-3 h-3 text-gray-400" />
                                 INCIDENT FEED
                             </h3>
                         </div>
