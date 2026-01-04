@@ -1,11 +1,94 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle, GeoJSON, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { trackingApi, riskzoneApi, organizationApi } from '@/lib/api';
-import { Building2, Radio, AlertTriangle, MapPin, Eye, EyeOff, Search, X, Crosshair, Info } from 'lucide-react';
+import { Building2, Radio, AlertTriangle, MapPin, Eye, EyeOff, Search, X, Crosshair, Info, Loader } from 'lucide-react';
 import { searchLocation } from '@/lib/geocoding';
+
+// Thailand GeoJSON URL (province boundaries)
+const THAILAND_GEOJSON_URL = 'https://raw.githubusercontent.com/apisit/thailand.json/master/thailand.json';
+
+// Province name mapping (Thai to English for GeoJSON matching)
+const provinceNameMap: Record<string, string> = {
+    'กรุงเทพมหานคร': 'Bangkok',
+    'พระนครศรีอยุธยา': 'Phra Nakhon Si Ayutthaya',
+    'อ่างทอง': 'Ang Thong',
+    'ลพบุรี': 'Lop Buri',
+    'สระบุรี': 'Saraburi',
+    'สิงห์บุรี': 'Sing Buri',
+    'ชัยนาท': 'Chai Nat',
+    'นนทบุรี': 'Nonthaburi',
+    'ปทุมธานี': 'Pathum Thani',
+    'ชลบุรี': 'Chon Buri',
+    'ระยอง': 'Rayong',
+    'จันทบุรี': 'Chanthaburi',
+    'ตราด': 'Trat',
+    'ฉะเชิงเทรา': 'Chachoengsao',
+    'ปราจีนบุรี': 'Prachin Buri',
+    'สระแก้ว': 'Sa Kaeo',
+    'สมุทรปราการ': 'Samut Prakan',
+    'นครราชสีมา': 'Nakhon Ratchasima',
+    'บุรีรัมย์': 'Buri Ram',
+    'สุรินทร์': 'Surin',
+    'ศรีสะเกษ': 'Si Sa Ket',
+    'อุบลราชธานี': 'Ubon Ratchathani',
+    'ยโสธร': 'Yasothon',
+    'ชัยภูมิ': 'Chaiyaphum',
+    'อำนาจเจริญ': 'Amnat Charoen',
+    'ขอนแก่น': 'Khon Kaen',
+    'อุดรธานี': 'Udon Thani',
+    'เลย': 'Loei',
+    'หนองคาย': 'Nong Khai',
+    'มหาสารคาม': 'Maha Sarakham',
+    'ร้อยเอ็ด': 'Roi Et',
+    'กาฬสินธุ์': 'Kalasin',
+    'สกลนคร': 'Sakon Nakhon',
+    'นครพนม': 'Nakhon Phanom',
+    'มุกดาหาร': 'Mukdahan',
+    'หนองบัวลำภู': 'Nong Bua Lam Phu',
+    'บึงกาฬ': 'Bueng Kan',
+    'เชียงใหม่': 'Chiang Mai',
+    'เชียงราย': 'Chiang Rai',
+    'ลำพูน': 'Lamphun',
+    'ลำปาง': 'Lampang',
+    'แพร่': 'Phrae',
+    'น่าน': 'Nan',
+    'พะเยา': 'Phayao',
+    'แม่ฮ่องสอน': 'Mae Hong Son',
+    'นครสวรรค์': 'Nakhon Sawan',
+    'อุทัยธานี': 'Uthai Thani',
+    'กำแพงเพชร': 'Kamphaeng Phet',
+    'ตาก': 'Tak',
+    'สุโขทัย': 'Sukhothai',
+    'พิษณุโลก': 'Phitsanulok',
+    'พิจิตร': 'Phichit',
+    'เพชรบูรณ์': 'Phetchabun',
+    'อุตรดิตถ์': 'Uttaradit',
+    'นครปฐม': 'Nakhon Pathom',
+    'สุพรรณบุรี': 'Suphan Buri',
+    'กาญจนบุรี': 'Kanchanaburi',
+    'ราชบุรี': 'Ratchaburi',
+    'เพชรบุรี': 'Phetchaburi',
+    'ประจวบคีรีขันธ์': 'Prachuap Khiri Khan',
+    'สมุทรสงคราม': 'Samut Songkhram',
+    'สมุทรสาคร': 'Samut Sakhon',
+    'นครศรีธรรมราช': 'Nakhon Si Thammarat',
+    'สุราษฎร์ธานี': 'Surat Thani',
+    'ชุมพร': 'Chumphon',
+    'ระนอง': 'Ranong',
+    'พังงา': 'Phangnga',
+    'ภูเก็ต': 'Phuket',
+    'กระบี่': 'Krabi',
+    'สงขลา': 'Songkhla',
+    'สตูล': 'Satun',
+    'ตรัง': 'Trang',
+    'พัทลุง': 'Phatthalung',
+    'ปัตตานี': 'Pattani',
+    'ยะลา': 'Yala',
+    'นราธิวาส': 'Narathiwat',
+};
 
 // ==================== ICONS ====================
 
@@ -94,6 +177,10 @@ export default function FullMapContent() {
     const [bureaus, setBureaus] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // GeoJSON state
+    const [geoJsonData, setGeoJsonData] = useState<any>(null);
+    const [geoJsonKey, setGeoJsonKey] = useState(0); // Force re-render key
+
     // Map state
     const [center, setCenter] = useState<[number, number]>([13.7563, 100.5018]);
     const [zoom, setZoom] = useState(6);
@@ -109,6 +196,20 @@ export default function FullMapContent() {
     const [showStations, setShowStations] = useState(true);
     const [showPatrols, setShowPatrols] = useState(true);
     const [showRiskZones, setShowRiskZones] = useState(true);
+    const [showBoundaries, setShowBoundaries] = useState(true);
+
+    // Fetch GeoJSON data
+    useEffect(() => {
+        fetch(THAILAND_GEOJSON_URL)
+            .then(res => res.json())
+            .then(data => setGeoJsonData(data))
+            .catch(err => console.error('GeoJSON fetch error:', err));
+    }, []);
+
+    // Update GeoJSON key when province changes (to force re-render)
+    useEffect(() => {
+        setGeoJsonKey(prev => prev + 1);
+    }, [selectedProvince]);
 
     // Fetch data
     useEffect(() => {
@@ -217,6 +318,50 @@ export default function FullMapContent() {
         setZoom(14);
     };
 
+    // Get selected province name in English for GeoJSON matching
+    const selectedProvinceName = useMemo(() => {
+        if (!selectedProvince) return null;
+        const province = provinces.find(p => p.id === selectedProvince);
+        if (!province) return null;
+        return provinceNameMap[province.name] || province.name;
+    }, [selectedProvince, provinces]);
+
+    // GeoJSON style function
+    const getProvinceStyle = useCallback((feature: any) => {
+        const featureName = feature?.properties?.name || '';
+        const isSelected = selectedProvinceName && featureName === selectedProvinceName;
+
+        if (isSelected) {
+            return {
+                fillColor: '#10b981',
+                fillOpacity: 0.25,
+                color: '#10b981',
+                weight: 3,
+                opacity: 1,
+            };
+        }
+
+        // If a province is selected, dim others
+        if (selectedProvinceName) {
+            return {
+                fillColor: '#1f2937',
+                fillOpacity: 0.6,
+                color: '#374151',
+                weight: 1,
+                opacity: 0.5,
+            };
+        }
+
+        // Default style (no selection)
+        return {
+            fillColor: '#1f2937',
+            fillOpacity: 0.1,
+            color: '#4b5563',
+            weight: 1,
+            opacity: 0.4,
+        };
+    }, [selectedProvinceName]);
+
     // Reset view
     const resetView = () => {
         setCenter([13.7563, 100.5018]);
@@ -272,8 +417,8 @@ export default function FullMapContent() {
                     value={selectedProvince}
                     onChange={(e) => setSelectedProvince(e.target.value)}
                     className={`px-3 py-2 border rounded-lg text-white text-sm ${selectedProvince
-                            ? 'bg-emerald-900/80 border-emerald-500'
-                            : 'bg-gray-900/95 border-gray-700'
+                        ? 'bg-emerald-900/80 border-emerald-500'
+                        : 'bg-gray-900/95 border-gray-700'
                         }`}
                 >
                     <option value="">ทุกจังหวัด</option>
@@ -427,18 +572,12 @@ export default function FullMapContent() {
                 <MapController center={center} zoom={zoom} />
                 <ZoomHandler onZoomChange={setCurrentZoom} />
 
-                {/* Province Highlight Circle */}
-                {provinceInfo && (
-                    <Circle
-                        center={provinceInfo.center}
-                        radius={provinceInfo.radius}
-                        pathOptions={{
-                            color: '#10b981',
-                            fillColor: '#10b981',
-                            fillOpacity: 0.08,
-                            weight: 3,
-                            dashArray: '10, 5',
-                        }}
+                {/* Province Boundaries GeoJSON */}
+                {showBoundaries && geoJsonData && (
+                    <GeoJSON
+                        key={geoJsonKey}
+                        data={geoJsonData}
+                        style={getProvinceStyle}
                     />
                 )}
 
