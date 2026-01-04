@@ -123,7 +123,7 @@ export default function MapSearchBar({ onSelect, stations = [], riskZones = [], 
     };
 
     return (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500] w-80">
+        <div className="absolute top-14 left-4 z-[500] w-72">
             {/* Search Input */}
             <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
