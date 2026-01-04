@@ -243,11 +243,17 @@ export default function DashboardMap() {
             return;
         }
 
-        const prov = provinces.find((p) => p.id === provinceId);
-        if (prov?.latitude && prov?.longitude) {
-            setCenter([prov.latitude, prov.longitude]);
+        // Province doesn't have lat/lng in DB, calculate from stations in this province
+        const provinceStations = stations.filter((s) => s.provinceId === provinceId && s.latitude && s.longitude);
+        if (provinceStations.length > 0) {
+            const avgLat = provinceStations.reduce((sum, s) => sum + s.latitude, 0) / provinceStations.length;
+            const avgLng = provinceStations.reduce((sum, s) => sum + s.longitude, 0) / provinceStations.length;
+            setCenter([avgLat, avgLng]);
             setCurrentZoom(ZOOM_LEVELS.PROVINCE);
-            setFlyTrigger((prev) => prev + 1); // Force fly animation
+            setFlyTrigger((prev) => prev + 1);
+        } else {
+            // No stations with coordinates, try to find any station to at least identify the region
+            console.warn(`Province ${provinceId} has no stations with coordinates`);
         }
     };
 
@@ -264,17 +270,18 @@ export default function DashboardMap() {
             setCurrentZoom(6);
             setFlyTrigger((prev) => prev + 1);
         } else {
-            // Calculate center of all provinces in this bureau
-            const bureauProvinces = provinces.filter((p) => p.bureauId === bureauId);
-            if (bureauProvinces.length > 0) {
-                const validProvinces = bureauProvinces.filter((p) => p.latitude && p.longitude);
-                if (validProvinces.length > 0) {
-                    const avgLat = validProvinces.reduce((sum, p) => sum + p.latitude, 0) / validProvinces.length;
-                    const avgLng = validProvinces.reduce((sum, p) => sum + p.longitude, 0) / validProvinces.length;
-                    setCenter([avgLat, avgLng]);
-                    setCurrentZoom(ZOOM_LEVELS.REGION);
-                    setFlyTrigger((prev) => prev + 1);
-                }
+            // Calculate center from stations in this bureau's provinces
+            const bureauProvinceIds = provinces.filter((p) => p.bureauId === bureauId).map((p) => p.id);
+            const bureauStations = stations.filter((s) => bureauProvinceIds.includes(s.provinceId) && s.latitude && s.longitude);
+
+            if (bureauStations.length > 0) {
+                const avgLat = bureauStations.reduce((sum, s) => sum + s.latitude, 0) / bureauStations.length;
+                const avgLng = bureauStations.reduce((sum, s) => sum + s.longitude, 0) / bureauStations.length;
+                setCenter([avgLat, avgLng]);
+                setCurrentZoom(ZOOM_LEVELS.REGION);
+                setFlyTrigger((prev) => prev + 1);
+            } else {
+                console.warn(`Bureau ${bureauId} has no stations with coordinates`);
             }
         }
     };
