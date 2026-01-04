@@ -1,94 +1,25 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { trackingApi, riskzoneApi, organizationApi } from '@/lib/api';
+import {
+    createStationIcon,
+    createPatrolIcon,
+    createSelectedIcon,
+    getRiskColor,
+    getThreatCategoryColor,
+    MAP_TILES,
+    ZOOM_LEVELS,
+    THAILAND_CENTER,
+} from '@/lib/mapUtils';
 import MapSearchBar from './MapSearchBar';
-import { Building2, Radio, AlertTriangle, MapPin, Eye, EyeOff } from 'lucide-react';
-
-// ==================== ICONS ====================
-
-// Station Icon with patrol count
-const createStationIcon = (name: string, patrolCount: number, isSelected: boolean) => {
-    const bgColor = isSelected ? '#10b981' : '#3b82f6';
-    const borderColor = isSelected ? '#34d399' : '#60a5fa';
-    return new L.DivIcon({
-        html: `
-            <div class="relative group cursor-pointer">
-                <div class="w-9 h-9 rounded-lg ${isSelected ? 'scale-110' : ''}" style="background: ${bgColor}; border: 2px solid ${borderColor}; box-shadow: 0 0 15px ${bgColor}40;">
-                    <div class="w-full h-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                        </svg>
-                    </div>
-                    ${patrolCount > 0 ? `
-                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border border-white shadow-md">
-                            <span class="text-[8px] font-bold text-white">${patrolCount}</span>
-                        </div>
-                    ` : ''}
-                </div>
-                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-black/90 px-2 py-0.5 rounded text-[9px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none">
-                    ${name.replace('สถานีตำรวจภูธร', 'สภ.')}
-                </div>
-            </div>
-        `,
-        className: '',
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-        popupAnchor: [0, -22],
-    });
-};
-
-// Patrol Icon  
-const createPatrolIcon = (rank: string, isActive: boolean) => {
-    const color = isActive ? '#00ffff' : '#666666';
-    return new L.DivIcon({
-        html: `
-            <div class="relative group">
-                <div class="w-8 h-8 bg-black/60 backdrop-blur-md rounded-full border-2 shadow-[0_0_12px_${color}] flex items-center justify-center" style="border-color: ${color};">
-                    <div class="w-2 h-2 rounded-full ${isActive ? 'animate-pulse' : ''}" style="background: ${color}; box-shadow: 0 0 8px ${color};"></div>
-                </div>
-                <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-black/90 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap" style="color: ${color};">
-                    ${rank}
-                </div>
-            </div>
-        `,
-        className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -20],
-    });
-};
-
-// Selected location icon
-const createSelectedIcon = () => {
-    return new L.DivIcon({
-        html: `<div class="w-8 h-8 bg-emerald-500 rounded-full border-4 border-white shadow-[0_0_20px_#10b981] flex items-center justify-center animate-bounce">
-            <div class="w-2 h-2 bg-white rounded-full"></div>
-        </div>`,
-        className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -35],
-    });
-};
-
-// Risk Zone colors
-const getRiskColor = (level: string) => {
-    switch (level) {
-        case 'CRITICAL': return '#ff0055';
-        case 'HIGH': return '#ff5500';
-        case 'MEDIUM': return '#ffcc00';
-        case 'LOW': return '#00ffcc';
-        default: return '#888888';
-    }
-};
+import { Building2, Radio, AlertTriangle, MapPin, Eye, EyeOff, Shield, Users, Clock, Zap } from 'lucide-react';
 
 // ==================== MAP COMPONENTS ====================
 
-// Map controller for flyTo
-function MapController({ center, zoom }: { center: [number, number], zoom?: number }) {
+function MapController({ center, zoom }: { center: [number, number]; zoom?: number }) {
     const map = useMap();
     useEffect(() => {
         if (center[0] !== 0 && center[1] !== 0) {
@@ -98,21 +29,14 @@ function MapController({ center, zoom }: { center: [number, number], zoom?: numb
     return null;
 }
 
-// Zoom level handler
 function ZoomHandler({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
     const map = useMapEvents({
-        zoomend: () => {
-            onZoomChange(map.getZoom());
-        },
-        load: () => {
-            onZoomChange(map.getZoom());
-        }
+        zoomend: () => onZoomChange(map.getZoom()),
+        load: () => onZoomChange(map.getZoom()),
     });
-
     useEffect(() => {
         onZoomChange(map.getZoom());
     }, [map, onZoomChange]);
-
     return null;
 }
 
@@ -136,46 +60,59 @@ export default function DashboardMap() {
     const [loading, setLoading] = useState(true);
 
     // Map state
-    const [center, setCenter] = useState<[number, number]>([14.5333, 100.9167]); // Saraburi center
-    const [currentZoom, setCurrentZoom] = useState(11);
+    const [center, setCenter] = useState<[number, number]>(THAILAND_CENTER);
+    const [currentZoom, setCurrentZoom] = useState(6);
     const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
     const [selectedStation, setSelectedStation] = useState<string | null>(null);
 
-    // Visibility toggles
+    // ===== VISIBILITY TOGGLES (Layer Controls) =====
     const [showStations, setShowStations] = useState(true);
     const [showPatrols, setShowPatrols] = useState(true);
     const [showRiskZones, setShowRiskZones] = useState(true);
 
-    // Zoom-based visibility
-    const zoomShowStations = currentZoom < 14;
-    const zoomShowPatrols = currentZoom >= 12;
-    const zoomShowRiskZones = currentZoom >= 13;
-    const zoomShowRiskDetails = currentZoom >= 15;
+    // ===== THREAT CATEGORY FILTERS =====
+    const [threatFilters, setThreatFilters] = useState({
+        DRUGS: true,
+        WEAPONS: true,
+        TRAFFIC: true,
+        VIOLENT: true,
+        THEFT: true,
+        OTHER: true,
+    });
+
+    // ===== TIME MODE =====
+    const [timeMode, setTimeMode] = useState<'live' | 'historical'>('live');
+
+    // Zoom-based visibility thresholds
+    const zoomShowStations = currentZoom >= 8;
+    const zoomShowPatrols = currentZoom >= 10;
+    const zoomShowRiskZones = currentZoom >= 9;
+    const zoomShowRiskDetails = currentZoom >= 13;
 
     // Fetch data
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             const [patrolRes, riskRes, stationRes] = await Promise.all([
                 trackingApi.getActivePatrols(),
                 riskzoneApi.getAll(),
-                organizationApi.getStations()
+                organizationApi.getStations(),
             ]);
 
             if (patrolRes.data) setPatrols(patrolRes.data);
             if (riskRes.data) setRiskZones(riskRes.data);
             if (stationRes.data) setStations(stationRes.data);
         } catch (err) {
-            console.error("Map data fetch error", err);
+            console.error('Map data fetch error', err);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchData();
         const interval = setInterval(fetchData, 10000);
         return () => clearInterval(interval);
-    }, []);
+    }, [fetchData]);
 
     // Listen for flyToLocation events from PriorityFeed
     useEffect(() => {
@@ -183,12 +120,9 @@ export default function DashboardMap() {
             const { lat, lng, zoom } = event.detail;
             if (lat && lng) {
                 setCenter([lat, lng]);
-                if (zoom) {
-                    setCurrentZoom(zoom);
-                }
+                if (zoom) setCurrentZoom(zoom);
             }
         };
-
         window.addEventListener('flyToLocation', handleFlyTo as EventListener);
         return () => window.removeEventListener('flyToLocation', handleFlyTo as EventListener);
     }, []);
@@ -196,32 +130,36 @@ export default function DashboardMap() {
     // Count patrols per station
     const patrolCountByStation = useMemo(() => {
         const counts: Record<string, number> = {};
-        patrols.forEach(p => {
+        patrols.forEach((p) => {
             const stationId = p.user?.stationId;
-            if (stationId) {
-                counts[stationId] = (counts[stationId] || 0) + 1;
-            }
+            if (stationId) counts[stationId] = (counts[stationId] || 0) + 1;
         });
         return counts;
     }, [patrols]);
 
     // Patrols with location
-    const patrolsWithLocation = useMemo(() =>
-        patrols.map(p => ({
-            ...p,
-            currentLocation: p.locations?.[0] || null
-        })).filter(p => p.currentLocation),
+    const patrolsWithLocation = useMemo(
+        () =>
+            patrols
+                .map((p) => ({ ...p, currentLocation: p.locations?.[0] || null }))
+                .filter((p) => p.currentLocation),
         [patrols]
     );
+
+    // Filtered risk zones by threat category
+    const filteredRiskZones = useMemo(() => {
+        return riskZones.filter((zone) => {
+            const category = zone.category || 'OTHER';
+            return threatFilters[category as keyof typeof threatFilters] ?? threatFilters.OTHER;
+        });
+    }, [riskZones, threatFilters]);
 
     // Handle search selection
     const handleSearchSelect = (result: SearchResult) => {
         if (result.lat && result.lng) {
             setCenter([result.lat, result.lng]);
             setSelectedResult(result);
-            if (result.type === 'station') {
-                setSelectedStation(result.id);
-            }
+            if (result.type === 'station') setSelectedStation(result.id);
         }
     };
 
@@ -235,8 +173,16 @@ export default function DashboardMap() {
             name: station.name,
             lat: station.latitude,
             lng: station.longitude,
-            data: station
+            data: station,
         });
+    };
+
+    // Toggle threat filter
+    const toggleThreatFilter = (category: string) => {
+        setThreatFilters((prev) => ({
+            ...prev,
+            [category]: !prev[category as keyof typeof prev],
+        }));
     };
 
     if (loading && stations.length === 0) {
@@ -260,233 +206,237 @@ export default function DashboardMap() {
                 patrols={patrolsWithLocation}
             />
 
-            {/* Legend Panel */}
-            <div className="absolute top-4 right-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-bold">Map Legend</p>
+            {/* ===== LEGEND & LAYER CONTROLS ===== */}
+            <div className="absolute top-4 right-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl max-w-[200px]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-bold">Map Layers</p>
 
-                <div className="space-y-2">
-                    {/* Toggle: Stations */}
+                {/* Layer Toggles */}
+                <div className="space-y-1.5 mb-3">
                     <button
                         onClick={() => setShowStations(!showStations)}
-                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg transition ${showStations ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-800 text-gray-500'}`}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition ${showStations ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-800 text-gray-500'
+                            }`}
                     >
-                        <Building2 className="w-4 h-4" />
-                        <span className="text-xs font-medium flex-1 text-left">สถานี</span>
-                        {showStations ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                        <Building2 className="w-3.5 h-3.5" />
+                        <span>สถานี ({stations.length})</span>
+                        {showStations ? <Eye className="w-3 h-3 ml-auto" /> : <EyeOff className="w-3 h-3 ml-auto" />}
                     </button>
 
-                    {/* Toggle: Patrols */}
                     <button
                         onClick={() => setShowPatrols(!showPatrols)}
-                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg transition ${showPatrols ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-800 text-gray-500'}`}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition ${showPatrols ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-800 text-gray-500'
+                            }`}
                     >
-                        <Radio className="w-4 h-4" />
-                        <span className="text-xs font-medium flex-1 text-left">สายตรวจ</span>
-                        <span className="text-[10px] bg-cyan-500/30 px-1.5 rounded">{patrolsWithLocation.length}</span>
+                        <Radio className="w-3.5 h-3.5" />
+                        <span>สายตรวจ ({patrolsWithLocation.length})</span>
+                        {showPatrols ? <Eye className="w-3 h-3 ml-auto" /> : <EyeOff className="w-3 h-3 ml-auto" />}
                     </button>
 
-                    {/* Toggle: Risk Zones */}
                     <button
                         onClick={() => setShowRiskZones(!showRiskZones)}
-                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg transition ${showRiskZones ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500'}`}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition ${showRiskZones ? 'bg-rose-500/20 text-rose-400' : 'bg-gray-800 text-gray-500'
+                            }`}
                     >
-                        <AlertTriangle className="w-4 h-4" />
-                        <span className="text-xs font-medium flex-1 text-left">จุดเสี่ยง</span>
-                        <span className="text-[10px] bg-amber-500/30 px-1.5 rounded">{riskZones.length}</span>
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>จุดเสี่ยง ({filteredRiskZones.length})</span>
+                        {showRiskZones ? <Eye className="w-3 h-3 ml-auto" /> : <EyeOff className="w-3 h-3 ml-auto" />}
                     </button>
                 </div>
 
-                {/* Zoom level indicator */}
-                <div className="mt-3 pt-2 border-t border-gray-800">
-                    <p className="text-[10px] text-gray-500">Zoom: {currentZoom}</p>
-                    <p className="text-[9px] text-gray-600 mt-1">
-                        {currentZoom < 12 && '📍 ภาพรวมจังหวัด'}
-                        {currentZoom >= 12 && currentZoom < 14 && '🏢 ระดับอำเภอ'}
-                        {currentZoom >= 14 && currentZoom < 16 && '🚔 ระดับสถานี'}
-                        {currentZoom >= 16 && '📌 ระดับถนน'}
-                    </p>
+                {/* Threat Category Filters */}
+                <div className="border-t border-gray-700 pt-2">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 font-bold">Threat Types</p>
+                    <div className="flex flex-wrap gap-1">
+                        {Object.entries(threatFilters).map(([category, enabled]) => {
+                            const { color, emoji } = getThreatCategoryColor(category);
+                            return (
+                                <button
+                                    key={category}
+                                    onClick={() => toggleThreatFilter(category)}
+                                    className={`px-1.5 py-0.5 rounded text-[10px] transition ${enabled ? 'opacity-100' : 'opacity-40'
+                                        }`}
+                                    style={{ backgroundColor: enabled ? `${color}30` : '#374151', color: enabled ? color : '#6b7280' }}
+                                    title={category}
+                                >
+                                    {emoji}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Time Mode Toggle */}
+                <div className="border-t border-gray-700 pt-2 mt-2">
+                    <div className="flex gap-1">
+                        <button
+                            onClick={() => setTimeMode('live')}
+                            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded text-[10px] transition ${timeMode === 'live' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-500'
+                                }`}
+                        >
+                            <Zap className="w-3 h-3" />
+                            Live
+                        </button>
+                        <button
+                            onClick={() => setTimeMode('historical')}
+                            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded text-[10px] transition ${timeMode === 'historical' ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500'
+                                }`}
+                        >
+                            <Clock className="w-3 h-3" />
+                            24h
+                        </button>
+                    </div>
+                </div>
+
+                {/* Zoom Indicator */}
+                <div className="border-t border-gray-700 pt-2 mt-2 flex items-center justify-between text-[10px] text-gray-500">
+                    <span>Zoom: {currentZoom}</span>
+                    <span>🗺️ {timeMode === 'live' ? 'Real-time' : 'Historical'}</span>
                 </div>
             </div>
 
-            {/* Map Container */}
+            {/* ===== MAP CONTAINER ===== */}
             <MapContainer
-                center={center}
-                zoom={11}
+                center={THAILAND_CENTER}
+                zoom={6}
                 className="w-full h-full"
                 zoomControl={false}
                 style={{ background: '#0a0a0a' }}
             >
                 <TileLayer
-                    attribution='&copy; OpenStreetMap &copy; CARTO'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    maxZoom={20}
+                    url={MAP_TILES.dark}
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 />
 
-                <MapController center={center} zoom={currentZoom < 14 ? 14 : undefined} />
+                <MapController center={center} zoom={currentZoom} />
                 <ZoomHandler onZoomChange={setCurrentZoom} />
 
-                {/* ==================== STATIONS ==================== */}
-                {showStations && stations.map((station) => (
-                    <Marker
-                        key={station.id}
-                        position={[station.latitude, station.longitude]}
-                        icon={createStationIcon(
-                            station.name,
-                            patrolCountByStation[station.id] || 0,
-                            selectedStation === station.id
-                        )}
-                        eventHandlers={{
-                            click: () => handleStationClick(station)
-                        }}
-                    >
-                        <Popup>
-                            <div className="p-3 min-w-[200px]">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <div className="w-10 h-10 rounded-lg bg-blue-500 flex items-center justify-center">
-                                        <Building2 className="w-5 h-5 text-white" />
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-white text-sm">
-                                            {station.name.replace('สถานีตำรวจภูธร', 'สภ.')}
-                                        </h4>
-                                        <p className="text-[10px] text-gray-400">{station.code}</p>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 text-xs mt-3">
-                                    <div className="bg-white/10 rounded p-2 text-center">
-                                        <p className="text-emerald-400 font-bold">{patrolCountByStation[station.id] || 0}</p>
-                                        <p className="text-gray-500 text-[10px]">สายตรวจ</p>
-                                    </div>
-                                    <div className="bg-white/10 rounded p-2 text-center">
-                                        <p className="text-amber-400 font-bold">
-                                            {riskZones.filter(z => z.stationId === station.id).length}
-                                        </p>
-                                        <p className="text-gray-500 text-[10px]">จุดเสี่ยง</p>
-                                    </div>
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-2">{station.address}</p>
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-
-                {/* ==================== RISK ZONES ==================== */}
-                {showRiskZones && zoomShowRiskZones && riskZones.map((zone) => (
-                    <Circle
-                        key={zone.id}
-                        center={[zone.latitude, zone.longitude]}
-                        radius={zoomShowRiskDetails ? (zone.radius || 100) : (zone.radius || 100) * 2}
-                        pathOptions={{
-                            color: getRiskColor(zone.riskLevel),
-                            fillColor: getRiskColor(zone.riskLevel),
-                            fillOpacity: zoomShowRiskDetails ? 0.3 : 0.15,
-                            weight: zoomShowRiskDetails ? 2 : 1,
-                            dashArray: zoomShowRiskDetails ? undefined : '4, 8',
-                        }}
-                    >
-                        <Popup>
-                            <div className="p-2 min-w-[150px]">
-                                <h4 className="font-bold text-white text-sm">{zone.name}</h4>
-                                <p className="text-xs text-gray-400 mt-1">{zone.description}</p>
-                                <div className="mt-2 flex gap-2">
-                                    <span
-                                        className="text-[10px] px-2 py-0.5 rounded font-bold"
-                                        style={{
-                                            background: getRiskColor(zone.riskLevel) + '30',
-                                            color: getRiskColor(zone.riskLevel)
-                                        }}
-                                    >
-                                        {zone.riskLevel}
-                                    </span>
-                                    <span className="text-[10px] px-2 py-0.5 rounded bg-white/10 text-white">
-                                        ตรวจ {zone.requiredCheckIns} ครั้ง/วัน
-                                    </span>
-                                </div>
-                            </div>
-                        </Popup>
-                    </Circle>
-                ))}
-
-                {/* ==================== PATROLS ==================== */}
-                {showPatrols && zoomShowPatrols && patrolsWithLocation.map((patrol) => {
-                    const loc = patrol.currentLocation;
-                    if (!loc) return null;
-
-                    return (
-                        <Marker
-                            key={patrol.id}
-                            position={[loc.latitude, loc.longitude]}
-                            icon={createPatrolIcon(patrol.user?.rank || '', patrol.isActive)}
-                        >
-                            <Popup>
-                                <div className="p-3">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center border-2 border-cyan-500">
-                                            <span className="text-sm font-bold text-cyan-400">
-                                                {patrol.user?.firstName?.charAt(0)}
+                {/* Stations */}
+                {showStations &&
+                    zoomShowStations &&
+                    stations
+                        .filter((s) => s.latitude && s.longitude)
+                        .map((station) => (
+                            <Marker
+                                key={station.id}
+                                position={[station.latitude, station.longitude]}
+                                icon={createStationIcon(
+                                    station.name,
+                                    patrolCountByStation[station.id] || 0,
+                                    selectedStation === station.id,
+                                    false
+                                )}
+                                eventHandlers={{ click: () => handleStationClick(station) }}
+                            >
+                                <Popup className="custom-popup">
+                                    <div className="bg-gray-900 text-white p-3 rounded-lg min-w-[200px]">
+                                        <h3 className="font-bold text-sm mb-1">{station.name}</h3>
+                                        <p className="text-xs text-gray-400">{station.province?.name}</p>
+                                        <div className="flex gap-2 mt-2 text-xs">
+                                            <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
+                                                สายตรวจ: {patrolCountByStation[station.id] || 0}
                                             </span>
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-white text-sm">
-                                                {patrol.user?.rank} {patrol.user?.firstName}
-                                            </p>
-                                            <p className="text-[10px] text-emerald-400 flex items-center gap-1">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                                ON DUTY
-                                            </p>
-                                        </div>
                                     </div>
-                                    <div className="text-[10px] text-gray-400 font-mono bg-white/5 rounded p-2">
-                                        <p>📍 {loc.latitude.toFixed(6)}, {loc.longitude.toFixed(6)}</p>
-                                        <p>🕐 {new Date(loc.timestamp).toLocaleTimeString()}</p>
-                                    </div>
+                                </Popup>
+                            </Marker>
+                        ))}
+
+                {/* Patrols */}
+                {showPatrols &&
+                    zoomShowPatrols &&
+                    patrolsWithLocation.map((patrol) => (
+                        <Marker
+                            key={patrol.id}
+                            position={[patrol.currentLocation.latitude, patrol.currentLocation.longitude]}
+                            icon={createPatrolIcon(patrol.user?.rank || 'N/A', true)}
+                        >
+                            <Popup>
+                                <div className="bg-gray-900 text-white p-2 rounded">
+                                    <p className="font-bold text-sm">
+                                        {patrol.user?.rank} {patrol.user?.firstName}
+                                    </p>
+                                    <p className="text-xs text-gray-400">{patrol.user?.station?.name}</p>
                                 </div>
                             </Popup>
                         </Marker>
-                    );
-                })}
+                    ))}
 
-                {/* ==================== SELECTED LOCATION ==================== */}
+                {/* Risk Zones */}
+                {showRiskZones &&
+                    zoomShowRiskZones &&
+                    filteredRiskZones
+                        .filter((zone) => zone.latitude && zone.longitude)
+                        .map((zone) => {
+                            const baseRadius = zone.radius || 200;
+                            const scaledRadius = zoomShowRiskDetails ? baseRadius : baseRadius * 0.5;
+                            return (
+                                <Circle
+                                    key={zone.id}
+                                    center={[zone.latitude, zone.longitude]}
+                                    radius={scaledRadius}
+                                    pathOptions={{
+                                        color: getRiskColor(zone.riskLevel),
+                                        fillColor: getRiskColor(zone.riskLevel),
+                                        fillOpacity: 0.3,
+                                        weight: 2,
+                                    }}
+                                >
+                                    <Popup>
+                                        <div className="bg-gray-900 text-white p-2 rounded">
+                                            <p className="font-bold text-sm">{zone.name}</p>
+                                            <p className="text-xs text-gray-400">ระดับ: {zone.riskLevel}</p>
+                                            <p className="text-xs text-gray-400">ตรวจ: {zone.requiredFrequency}x/วัน</p>
+                                        </div>
+                                    </Popup>
+                                </Circle>
+                            );
+                        })}
+
+                {/* Selected Location Marker */}
                 {selectedResult && selectedResult.type === 'location' && (
-                    <Marker
-                        position={[selectedResult.lat, selectedResult.lng]}
-                        icon={createSelectedIcon()}
-                    >
+                    <Marker position={[selectedResult.lat, selectedResult.lng]} icon={createSelectedIcon()}>
                         <Popup>
-                            <div className="p-2">
-                                <p className="font-bold text-white text-sm">{selectedResult.name.split(',')[0]}</p>
-                                <p className="text-xs text-gray-400">{selectedResult.name.split(',').slice(1, 3).join(',')}</p>
+                            <div className="bg-gray-900 text-white p-2 rounded">
+                                <p className="font-bold text-sm">{selectedResult.name}</p>
                             </div>
                         </Popup>
                     </Marker>
                 )}
             </MapContainer>
 
-            {/* Selected Info Panel */}
-            {selectedResult && (
-                <div className="absolute bottom-4 left-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-4 max-w-sm shadow-2xl">
-                    <div className="flex items-start justify-between gap-3">
+            {/* ===== SELECTED STATION INFO PANEL ===== */}
+            {selectedStation && selectedResult?.data && (
+                <div className="absolute bottom-4 left-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-4 shadow-2xl max-w-[280px]">
+                    <button
+                        onClick={() => {
+                            setSelectedStation(null);
+                            setSelectedResult(null);
+                        }}
+                        className="absolute top-2 right-2 text-gray-500 hover:text-white"
+                    >
+                        ✕
+                    </button>
+                    <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-white" />
+                        </div>
                         <div>
-                            <p className="text-xs text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                {selectedResult.type === 'station' && <><Building2 className="w-3 h-3" /> สถานี</>}
-                                {selectedResult.type === 'riskzone' && <><AlertTriangle className="w-3 h-3" /> จุดเสี่ยง</>}
-                                {selectedResult.type === 'patrol' && <><Radio className="w-3 h-3" /> สายตรวจ</>}
-                                {selectedResult.type === 'location' && <><MapPin className="w-3 h-3" /> สถานที่</>}
-                            </p>
-                            <p className="text-white font-bold">{selectedResult.name.split(',')[0]}</p>
-                            {selectedResult.data?.address && (
-                                <p className="text-gray-400 text-sm mt-1">{selectedResult.data.address}</p>
-                            )}
-                            <p className="text-gray-500 text-xs mt-2 font-mono">
-                                {selectedResult.lat.toFixed(6)}, {selectedResult.lng.toFixed(6)}
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider">สถานี</p>
+                            <h3 className="font-bold text-white text-sm">{selectedResult.data.name}</h3>
+                            <p className="text-xs text-gray-400">{selectedResult.data.province?.name}</p>
+                        </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-700 grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-gray-800 rounded p-2">
+                            <p className="text-gray-500">สายตรวจ</p>
+                            <p className="text-emerald-400 font-bold">{patrolCountByStation[selectedStation] || 0}</p>
+                        </div>
+                        <div className="bg-gray-800 rounded p-2">
+                            <p className="text-gray-500">พิกัด</p>
+                            <p className="text-gray-300 font-mono text-[10px]">
+                                {selectedResult.data.latitude?.toFixed(4)}, {selectedResult.data.longitude?.toFixed(4)}
                             </p>
                         </div>
-                        <button
-                            onClick={() => { setSelectedResult(null); setSelectedStation(null); }}
-                            className="text-gray-500 hover:text-white transition p-1"
-                        >
-                            ✕
-                        </button>
                     </div>
                 </div>
             )}

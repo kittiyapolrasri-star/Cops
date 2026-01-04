@@ -4,152 +4,37 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, GeoJSON, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { trackingApi, riskzoneApi, organizationApi } from '@/lib/api';
-import { Building2, Radio, AlertTriangle, MapPin, Eye, EyeOff, Search, X, Crosshair, Info, Loader } from 'lucide-react';
-import { searchLocation } from '@/lib/geocoding';
-
-// Thailand GeoJSON URL (province boundaries)
-const THAILAND_GEOJSON_URL = 'https://raw.githubusercontent.com/apisit/thailand.json/master/thailand.json';
-
-// Province name mapping (Thai to English for GeoJSON matching)
-const provinceNameMap: Record<string, string> = {
-    'กรุงเทพมหานคร': 'Bangkok',
-    'พระนครศรีอยุธยา': 'Phra Nakhon Si Ayutthaya',
-    'อ่างทอง': 'Ang Thong',
-    'ลพบุรี': 'Lop Buri',
-    'สระบุรี': 'Saraburi',
-    'สิงห์บุรี': 'Sing Buri',
-    'ชัยนาท': 'Chai Nat',
-    'นนทบุรี': 'Nonthaburi',
-    'ปทุมธานี': 'Pathum Thani',
-    'ชลบุรี': 'Chon Buri',
-    'ระยอง': 'Rayong',
-    'จันทบุรี': 'Chanthaburi',
-    'ตราด': 'Trat',
-    'ฉะเชิงเทรา': 'Chachoengsao',
-    'ปราจีนบุรี': 'Prachin Buri',
-    'สระแก้ว': 'Sa Kaeo',
-    'สมุทรปราการ': 'Samut Prakan',
-    'นครราชสีมา': 'Nakhon Ratchasima',
-    'บุรีรัมย์': 'Buri Ram',
-    'สุรินทร์': 'Surin',
-    'ศรีสะเกษ': 'Si Sa Ket',
-    'อุบลราชธานี': 'Ubon Ratchathani',
-    'ยโสธร': 'Yasothon',
-    'ชัยภูมิ': 'Chaiyaphum',
-    'อำนาจเจริญ': 'Amnat Charoen',
-    'ขอนแก่น': 'Khon Kaen',
-    'อุดรธานี': 'Udon Thani',
-    'เลย': 'Loei',
-    'หนองคาย': 'Nong Khai',
-    'มหาสารคาม': 'Maha Sarakham',
-    'ร้อยเอ็ด': 'Roi Et',
-    'กาฬสินธุ์': 'Kalasin',
-    'สกลนคร': 'Sakon Nakhon',
-    'นครพนม': 'Nakhon Phanom',
-    'มุกดาหาร': 'Mukdahan',
-    'หนองบัวลำภู': 'Nong Bua Lam Phu',
-    'บึงกาฬ': 'Bueng Kan',
-    'เชียงใหม่': 'Chiang Mai',
-    'เชียงราย': 'Chiang Rai',
-    'ลำพูน': 'Lamphun',
-    'ลำปาง': 'Lampang',
-    'แพร่': 'Phrae',
-    'น่าน': 'Nan',
-    'พะเยา': 'Phayao',
-    'แม่ฮ่องสอน': 'Mae Hong Son',
-    'นครสวรรค์': 'Nakhon Sawan',
-    'อุทัยธานี': 'Uthai Thani',
-    'กำแพงเพชร': 'Kamphaeng Phet',
-    'ตาก': 'Tak',
-    'สุโขทัย': 'Sukhothai',
-    'พิษณุโลก': 'Phitsanulok',
-    'พิจิตร': 'Phichit',
-    'เพชรบูรณ์': 'Phetchabun',
-    'อุตรดิตถ์': 'Uttaradit',
-    'นครปฐม': 'Nakhon Pathom',
-    'สุพรรณบุรี': 'Suphan Buri',
-    'กาญจนบุรี': 'Kanchanaburi',
-    'ราชบุรี': 'Ratchaburi',
-    'เพชรบุรี': 'Phetchaburi',
-    'ประจวบคีรีขันธ์': 'Prachuap Khiri Khan',
-    'สมุทรสงคราม': 'Samut Songkhram',
-    'สมุทรสาคร': 'Samut Sakhon',
-    'นครศรีธรรมราช': 'Nakhon Si Thammarat',
-    'สุราษฎร์ธานี': 'Surat Thani',
-    'ชุมพร': 'Chumphon',
-    'ระนอง': 'Ranong',
-    'พังงา': 'Phangnga',
-    'ภูเก็ต': 'Phuket',
-    'กระบี่': 'Krabi',
-    'สงขลา': 'Songkhla',
-    'สตูล': 'Satun',
-    'ตรัง': 'Trang',
-    'พัทลุง': 'Phatthalung',
-    'ปัตตานี': 'Pattani',
-    'ยะลา': 'Yala',
-    'นราธิวาส': 'Narathiwat',
-};
-
-// ==================== ICONS ====================
-
-const createStationIcon = (name: string, patrolCount: number, isSelected: boolean, isDimmed: boolean) => {
-    const bgColor = isSelected ? '#10b981' : isDimmed ? '#3b82f650' : '#3b82f6';
-    const borderColor = isSelected ? '#34d399' : isDimmed ? '#60a5fa50' : '#60a5fa';
-    const opacity = isDimmed ? '0.4' : '1';
-    return new L.DivIcon({
-        html: `
-            <div class="relative group cursor-pointer" style="opacity: ${opacity}">
-                <div class="w-8 h-8 rounded-lg ${isSelected ? 'scale-125' : ''}" style="background: ${bgColor}; border: 2px solid ${borderColor}; box-shadow: 0 0 12px ${bgColor}50;">
-                    <div class="w-full h-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                        </svg>
-                    </div>
-                    ${patrolCount > 0 ? `
-                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border border-white text-[8px] font-bold text-white">
-                            ${patrolCount}
-                        </div>
-                    ` : ''}
-                </div>
-            </div>
-        `,
-        className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -20],
-    });
-};
-
-const createPatrolIcon = (rank: string, isActive: boolean) => {
-    const color = isActive ? '#00ffff' : '#666666';
-    return new L.DivIcon({
-        html: `
-            <div class="relative">
-                <div class="w-6 h-6 bg-black/70 rounded-full border-2 flex items-center justify-center" style="border-color: ${color}; box-shadow: 0 0 10px ${color};">
-                    <div class="w-2 h-2 rounded-full ${isActive ? 'animate-pulse' : ''}" style="background: ${color};"></div>
-                </div>
-            </div>
-        `,
-        className: '',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-        popupAnchor: [0, -15],
-    });
-};
-
-const getRiskColor = (level: string) => {
-    switch (level) {
-        case 'CRITICAL': return '#ff0055';
-        case 'HIGH': return '#ff5500';
-        case 'MEDIUM': return '#ffcc00';
-        case 'LOW': return '#00ffcc';
-        default: return '#888888';
-    }
-};
+import {
+    createStationIcon,
+    createPatrolIcon,
+    getRiskColor,
+    getThreatCategoryColor,
+    MAP_TILES,
+    ZOOM_LEVELS,
+    THAILAND_CENTER,
+    THAILAND_GEOJSON_URL,
+    provinceNameMap,
+} from '@/lib/mapUtils';
+import {
+    Building2,
+    Radio,
+    AlertTriangle,
+    MapPin,
+    Eye,
+    EyeOff,
+    Search,
+    X,
+    ChevronDown,
+    Users,
+    Clock,
+    Zap,
+    RotateCcw,
+    Filter,
+} from 'lucide-react';
 
 // ==================== MAP COMPONENTS ====================
 
-function MapController({ center, zoom }: { center: [number, number], zoom: number }) {
+function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
     const map = useMap();
     useEffect(() => {
         if (center[0] !== 0 && center[1] !== 0) {
@@ -163,7 +48,6 @@ function ZoomHandler({ onZoomChange }: { onZoomChange: (zoom: number) => void })
     const map = useMapEvents({
         zoomend: () => onZoomChange(map.getZoom()),
     });
-    useEffect(() => { onZoomChange(map.getZoom()); }, [map, onZoomChange]);
     return null;
 }
 
@@ -173,210 +57,225 @@ export default function FullMapContent() {
     const [patrols, setPatrols] = useState<any[]>([]);
     const [riskZones, setRiskZones] = useState<any[]>([]);
     const [stations, setStations] = useState<any[]>([]);
-    const [provinces, setProvinces] = useState<any[]>([]);
     const [bureaus, setBureaus] = useState<any[]>([]);
+    const [provinces, setProvinces] = useState<any[]>([]);
+    const [geoJsonData, setGeoJsonData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    // GeoJSON state
-    const [geoJsonData, setGeoJsonData] = useState<any>(null);
-    const [geoJsonKey, setGeoJsonKey] = useState(0); // Force re-render key
-
     // Map state
-    const [center, setCenter] = useState<[number, number]>([13.7563, 100.5018]);
-    const [zoom, setZoom] = useState(6);
+    const [center, setCenter] = useState<[number, number]>(THAILAND_CENTER);
     const [currentZoom, setCurrentZoom] = useState(6);
     const [selectedStation, setSelectedStation] = useState<any>(null);
 
-    // Filter state
-    const [selectedProvince, setSelectedProvince] = useState<string>('');
+    // Filters
     const [selectedBureau, setSelectedBureau] = useState<string>('');
+    const [selectedProvince, setSelectedProvince] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
 
     // Visibility toggles
     const [showStations, setShowStations] = useState(true);
     const [showPatrols, setShowPatrols] = useState(true);
     const [showRiskZones, setShowRiskZones] = useState(true);
-    const [showBoundaries, setShowBoundaries] = useState(true);
 
-    // Fetch GeoJSON data
-    useEffect(() => {
-        fetch(THAILAND_GEOJSON_URL)
-            .then(res => res.json())
-            .then(data => setGeoJsonData(data))
-            .catch(err => console.error('GeoJSON fetch error:', err));
-    }, []);
+    // Threat filters
+    const [threatFilters, setThreatFilters] = useState({
+        DRUGS: true,
+        WEAPONS: true,
+        TRAFFIC: true,
+        VIOLENT: true,
+        THEFT: true,
+        OTHER: true,
+    });
 
-    // Update GeoJSON key when province changes (to force re-render)
-    useEffect(() => {
-        setGeoJsonKey(prev => prev + 1);
-    }, [selectedProvince]);
+    // Time mode
+    const [timeMode, setTimeMode] = useState<'live' | 'historical'>('live');
+
+    // Zoom thresholds
+    const zoomShowStations = currentZoom >= 8;
+    const zoomShowPatrols = currentZoom >= 10;
+    const zoomShowRiskZones = currentZoom >= 9;
 
     // Fetch data
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [patrolRes, riskRes, stationRes, bureauRes] = await Promise.all([
-                    trackingApi.getActivePatrols(),
-                    riskzoneApi.getAll(),
-                    organizationApi.getStations(),
-                    organizationApi.getBureaus()
-                ]);
+    const fetchData = useCallback(async () => {
+        try {
+            const [patrolRes, riskRes, stationRes, bureauRes, provinceRes] = await Promise.all([
+                trackingApi.getActivePatrols(),
+                riskzoneApi.getAll(),
+                organizationApi.getStations(),
+                organizationApi.getBureaus(),
+                organizationApi.getProvinces(),
+            ]);
 
-                if (patrolRes.data) setPatrols(patrolRes.data);
-                if (riskRes.data) setRiskZones(riskRes.data);
-                if (stationRes.data) setStations(stationRes.data);
-                if (bureauRes.data) {
-                    setBureaus(bureauRes.data);
-                    const allProvinces = bureauRes.data.flatMap((b: any) => b.provinces || []);
-                    setProvinces(allProvinces);
-                }
-            } catch (err) {
-                console.error("Map data fetch error", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+            if (patrolRes.data) setPatrols(patrolRes.data);
+            if (riskRes.data) setRiskZones(riskRes.data);
+            if (stationRes.data) setStations(stationRes.data);
+            if (bureauRes.data) setBureaus(bureauRes.data);
+            if (provinceRes.data) setProvinces(provinceRes.data);
+        } catch (err) {
+            console.error('Map data fetch error', err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Fetch GeoJSON
+    useEffect(() => {
+        fetch(THAILAND_GEOJSON_URL)
+            .then((res) => res.json())
+            .then((data) => setGeoJsonData(data))
+            .catch(console.error);
+    }, []);
+
+    useEffect(() => {
         fetchData();
         const interval = setInterval(fetchData, 15000);
         return () => clearInterval(interval);
-    }, []);
+    }, [fetchData]);
 
-    // Patrol count per station
+    // Filtered provinces by bureau
+    const filteredProvinces = useMemo(() => {
+        if (!selectedBureau) return provinces;
+        return provinces.filter((p) => p.bureauId === selectedBureau);
+    }, [provinces, selectedBureau]);
+
+    // Filtered stations
+    const filteredStations = useMemo(() => {
+        let result = stations;
+        if (selectedProvince) {
+            result = result.filter((s) => s.provinceId === selectedProvince);
+        } else if (selectedBureau) {
+            const provIds = filteredProvinces.map((p) => p.id);
+            result = result.filter((s) => provIds.includes(s.provinceId));
+        }
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(
+                (s) => s.name?.toLowerCase().includes(q) || s.code?.toLowerCase().includes(q)
+            );
+        }
+        return result;
+    }, [stations, selectedProvince, selectedBureau, filteredProvinces, searchQuery]);
+
+    // Patrol count by station
     const patrolCountByStation = useMemo(() => {
         const counts: Record<string, number> = {};
-        patrols.forEach(p => {
+        patrols.forEach((p) => {
             const stationId = p.user?.stationId;
             if (stationId) counts[stationId] = (counts[stationId] || 0) + 1;
         });
         return counts;
     }, [patrols]);
 
-    // Filtered stations (only selected province)
-    const filteredStations = useMemo(() => {
-        let result = stations;
+    // Patrols with location, filtered
+    const filteredPatrols = useMemo(() => {
+        let result = patrols
+            .map((p) => ({ ...p, currentLocation: p.locations?.[0] || null }))
+            .filter((p) => p.currentLocation);
+
         if (selectedProvince) {
-            result = result.filter(s => s.provinceId === selectedProvince);
-        }
-        if (selectedBureau && !selectedProvince) {
-            const bureauProvinces = provinces.filter(p => p.bureauId === selectedBureau).map(p => p.id);
-            result = result.filter(s => bureauProvinces.includes(s.provinceId));
+            result = result.filter((p) => p.user?.station?.provinceId === selectedProvince);
+        } else if (selectedBureau) {
+            const provIds = filteredProvinces.map((p) => p.id);
+            result = result.filter((p) => provIds.includes(p.user?.station?.provinceId));
         }
         return result;
-    }, [stations, selectedProvince, selectedBureau, provinces]);
+    }, [patrols, selectedProvince, selectedBureau, filteredProvinces]);
 
-    // Province center and bounding calculation
+    // Filtered risk zones by threat category
+    const filteredRiskZones = useMemo(() => {
+        let result = riskZones;
+        if (selectedProvince) {
+            result = result.filter((z) => z.station?.provinceId === selectedProvince);
+        }
+        return result.filter((zone) => {
+            const category = zone.category || 'OTHER';
+            return threatFilters[category as keyof typeof threatFilters] ?? threatFilters.OTHER;
+        });
+    }, [riskZones, selectedProvince, threatFilters]);
+
+    // Province info for selected province
     const provinceInfo = useMemo(() => {
         if (!selectedProvince) return null;
+        const prov = provinces.find((p) => p.id === selectedProvince);
+        if (!prov) return null;
+        const stationCount = filteredStations.length;
+        const patrolCount = filteredPatrols.length;
+        const riskCount = filteredRiskZones.length;
+        return { ...prov, stationCount, patrolCount, riskCount };
+    }, [selectedProvince, provinces, filteredStations, filteredPatrols, filteredRiskZones]);
 
-        const provinceStations = stations.filter(s => s.provinceId === selectedProvince);
-        if (provinceStations.length === 0) return null;
-
-        const province = provinces.find(p => p.id === selectedProvince);
-
-        // Calculate center and radius based on stations
-        const lats = provinceStations.map(s => s.latitude);
-        const lngs = provinceStations.map(s => s.longitude);
-        const centerLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-        const centerLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
-
-        // Calculate approximate radius (in meters) based on spread
-        const latSpread = Math.max(...lats) - Math.min(...lats);
-        const lngSpread = Math.max(...lngs) - Math.min(...lngs);
-        const spreadDegrees = Math.max(latSpread, lngSpread, 0.3); // minimum 0.3 degrees
-        const radiusKm = spreadDegrees * 111 / 2 + 10; // degrees to km + padding
-
-        // Count stats
-        const provinceRiskZones = riskZones.filter(z =>
-            provinceStations.some(s => s.id === z.stationId)
-        );
-        const provincePatrols = patrols.filter(p =>
-            provinceStations.some(s => s.id === p.user?.stationId)
-        );
-
-        return {
-            province,
-            center: [centerLat, centerLng] as [number, number],
-            radius: radiusKm * 1000, // convert to meters
-            stationCount: provinceStations.length,
-            riskZoneCount: provinceRiskZones.length,
-            patrolCount: provincePatrols.length,
-        };
-    }, [selectedProvince, stations, provinces, riskZones, patrols]);
-
-    // Auto-zoom when province selected
-    useEffect(() => {
-        if (provinceInfo) {
-            setCenter(provinceInfo.center);
-            setZoom(provinceInfo.stationCount > 5 ? 9 : 10);
+    // Handle province selection
+    const handleProvinceSelect = (provinceId: string) => {
+        setSelectedProvince(provinceId);
+        const prov = provinces.find((p) => p.id === provinceId);
+        if (prov?.latitude && prov?.longitude) {
+            setCenter([prov.latitude, prov.longitude]);
+            setCurrentZoom(ZOOM_LEVELS.PROVINCE);
         }
-    }, [provinceInfo]);
+    };
 
-    // Station click handler
+    // Handle bureau selection
+    const handleBureauSelect = (bureauId: string) => {
+        setSelectedBureau(bureauId);
+        setSelectedProvince('');
+        if (!bureauId) {
+            setCenter(THAILAND_CENTER);
+            setCurrentZoom(6);
+        }
+    };
+
+    // Handle station click
     const handleStationClick = (station: any) => {
         setSelectedStation(station);
         setCenter([station.latitude, station.longitude]);
-        setZoom(14);
+        setCurrentZoom(ZOOM_LEVELS.STATION);
     };
-
-    // Get selected province name in English for GeoJSON matching
-    const selectedProvinceName = useMemo(() => {
-        if (!selectedProvince) return null;
-        const province = provinces.find(p => p.id === selectedProvince);
-        if (!province) return null;
-        return provinceNameMap[province.name] || province.name;
-    }, [selectedProvince, provinces]);
-
-    // GeoJSON style function
-    const getProvinceStyle = useCallback((feature: any) => {
-        const featureName = feature?.properties?.name || '';
-        const isSelected = selectedProvinceName && featureName === selectedProvinceName;
-
-        if (isSelected) {
-            return {
-                fillColor: '#10b981',
-                fillOpacity: 0.25,
-                color: '#10b981',
-                weight: 3,
-                opacity: 1,
-            };
-        }
-
-        // If a province is selected, dim others
-        if (selectedProvinceName) {
-            return {
-                fillColor: '#1f2937',
-                fillOpacity: 0.6,
-                color: '#374151',
-                weight: 1,
-                opacity: 0.5,
-            };
-        }
-
-        // Default style (no selection)
-        return {
-            fillColor: '#1f2937',
-            fillOpacity: 0.1,
-            color: '#4b5563',
-            weight: 1,
-            opacity: 0.4,
-        };
-    }, [selectedProvinceName]);
 
     // Reset view
     const resetView = () => {
-        setCenter([13.7563, 100.5018]);
-        setZoom(6);
-        setSelectedProvince('');
         setSelectedBureau('');
+        setSelectedProvince('');
+        setSearchQuery('');
         setSelectedStation(null);
+        setCenter(THAILAND_CENTER);
+        setCurrentZoom(6);
+    };
+
+    // GeoJSON style function
+    const geoJsonStyle = useCallback(
+        (feature: any) => {
+            if (!selectedProvince || !feature?.properties?.name) {
+                return { fillOpacity: 0, weight: 0.5, color: '#374151' };
+            }
+            const thaiName = Object.entries(provinceNameMap).find(
+                ([_th, en]) => en.toLowerCase() === feature.properties.name.toLowerCase()
+            )?.[0];
+            const matchingProv = provinces.find((p) => p.name === thaiName);
+            const isSelected = matchingProv?.id === selectedProvince;
+            return {
+                fillColor: isSelected ? '#10b981' : 'transparent',
+                fillOpacity: isSelected ? 0.3 : 0,
+                weight: isSelected ? 3 : 0.5,
+                color: isSelected ? '#34d399' : '#374151',
+            };
+        },
+        [selectedProvince, provinces]
+    );
+
+    // Toggle threat filter
+    const toggleThreatFilter = (category: string) => {
+        setThreatFilters((prev) => ({
+            ...prev,
+            [category]: !prev[category as keyof typeof prev],
+        }));
     };
 
     if (loading) {
         return (
-            <div className="h-screen w-full bg-gray-950 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="w-12 h-12 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-emerald-500 font-mono tracking-widest text-sm">LOADING MAP DATA...</p>
+            <div className="h-[calc(100vh-64px)] w-full flex items-center justify-center bg-gray-950">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-emerald-400 font-mono tracking-widest">LOADING TACTICAL MAP...</p>
                 </div>
             </div>
         );
@@ -384,304 +283,330 @@ export default function FullMapContent() {
 
     return (
         <div className="h-[calc(100vh-64px)] w-full relative bg-gray-950">
-
-            {/* Top Controls */}
+            {/* ===== TOP CONTROLS ===== */}
             <div className="absolute top-4 left-4 right-4 z-[500] flex gap-3">
                 {/* Search */}
-                <div className="flex-1 flex gap-2 max-w-md">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="ค้นหาสถานที่..."
-                            className="w-full pl-10 pr-4 py-2 bg-gray-900/95 border border-gray-700 rounded-lg text-white text-sm"
-                        />
-                    </div>
+                <div className="relative flex-1 max-w-md">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                        type="text"
+                        placeholder="ค้นหาสถานี, สถานที่, จุดเสี่ยง..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-black/70 backdrop-blur-md border border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition"
+                    />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Bureau Filter */}
-                <select
-                    value={selectedBureau}
-                    onChange={(e) => { setSelectedBureau(e.target.value); setSelectedProvince(''); }}
-                    className="px-3 py-2 bg-gray-900/95 border border-gray-700 rounded-lg text-white text-sm"
-                >
-                    <option value="">ทุกภาค</option>
-                    {bureaus.map(b => (
-                        <option key={b.id} value={b.id}>{b.name.replace('กองบัญชาการตำรวจ', '')}</option>
-                    ))}
-                </select>
+                <div className="relative">
+                    <select
+                        value={selectedBureau}
+                        onChange={(e) => handleBureauSelect(e.target.value)}
+                        className="bg-black/70 backdrop-blur-md border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white appearance-none cursor-pointer pr-8 focus:outline-none focus:border-emerald-500 min-w-[140px]"
+                    >
+                        <option value="">ทุกกภาค</option>
+                        {bureaus.map((b) => (
+                            <option key={b.id} value={b.id}>
+                                {b.name}
+                            </option>
+                        ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                </div>
 
                 {/* Province Filter */}
-                <select
-                    value={selectedProvince}
-                    onChange={(e) => setSelectedProvince(e.target.value)}
-                    className={`px-3 py-2 border rounded-lg text-white text-sm ${selectedProvince
-                        ? 'bg-emerald-900/80 border-emerald-500'
-                        : 'bg-gray-900/95 border-gray-700'
-                        }`}
-                >
-                    <option value="">ทุกจังหวัด</option>
-                    {provinces
-                        .filter(p => !selectedBureau || p.bureauId === selectedBureau)
-                        .map(p => (
-                            <option key={p.id} value={p.id}>{p.name}</option>
+                <div className="relative">
+                    <select
+                        value={selectedProvince}
+                        onChange={(e) => handleProvinceSelect(e.target.value)}
+                        className="bg-black/70 backdrop-blur-md border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-white appearance-none cursor-pointer pr-8 focus:outline-none focus:border-emerald-500 min-w-[140px]"
+                    >
+                        <option value="">ทุกจังหวัด</option>
+                        {filteredProvinces.map((p) => (
+                            <option key={p.id} value={p.id}>
+                                {p.name}
+                            </option>
                         ))}
-                </select>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                </div>
 
                 {/* Reset Button */}
                 <button
                     onClick={resetView}
-                    className="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg text-white text-sm flex items-center gap-2"
+                    className="bg-black/70 backdrop-blur-md border border-gray-700 rounded-xl px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:border-gray-600 transition flex items-center gap-2"
                 >
-                    <Crosshair className="w-4 h-4" />
+                    <RotateCcw className="w-4 h-4" />
                     รีเซ็ต
                 </button>
             </div>
 
-            {/* Province Info Panel (shows when province is selected) */}
-            {provinceInfo && (
-                <div className="absolute top-20 left-4 z-[500] bg-emerald-900/95 backdrop-blur-md border border-emerald-500 rounded-xl p-4 shadow-2xl">
-                    <div className="flex items-center gap-2 mb-3">
-                        <MapPin className="w-5 h-5 text-emerald-400" />
-                        <h3 className="font-bold text-white">{provinceInfo.province?.name}</h3>
-                    </div>
-                    <div className="grid grid-cols-3 gap-3">
-                        <div className="text-center bg-black/30 rounded-lg p-2">
-                            <p className="text-xl font-bold text-blue-400">{provinceInfo.stationCount}</p>
-                            <p className="text-[10px] text-gray-400">สถานี</p>
-                        </div>
-                        <div className="text-center bg-black/30 rounded-lg p-2">
-                            <p className="text-xl font-bold text-cyan-400">{provinceInfo.patrolCount}</p>
-                            <p className="text-[10px] text-gray-400">สายตรวจ</p>
-                        </div>
-                        <div className="text-center bg-black/30 rounded-lg p-2">
-                            <p className="text-xl font-bold text-amber-400">{provinceInfo.riskZoneCount}</p>
-                            <p className="text-[10px] text-gray-400">จุดเสี่ยง</p>
-                        </div>
-                    </div>
-                    <p className="text-[10px] text-emerald-300 mt-2 flex items-center gap-1">
-                        <Info className="w-3 h-3" />
-                        คลิกที่สถานีเพื่อดูรายละเอียด
-                    </p>
-                </div>
-            )}
-
-            {/* Legend Panel */}
-            <div className="absolute top-20 right-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl w-48">
+            {/* ===== LEGEND PANEL ===== */}
+            <div className="absolute top-20 right-4 z-[500] bg-black/80 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl w-48">
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-bold">MAP LAYERS</p>
 
-                <div className="space-y-1.5">
+                {/* Layer Toggles */}
+                <div className="space-y-1.5 mb-3">
                     <button
                         onClick={() => setShowStations(!showStations)}
-                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs transition ${showStations ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-800 text-gray-500'}`}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition ${showStations ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-800 text-gray-500'
+                            }`}
                     >
-                        <Building2 className="w-3 h-3" />
-                        <span className="flex-1 text-left">สถานี ({filteredStations.length})</span>
-                        {showStations ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                        <Building2 className="w-3.5 h-3.5" />
+                        สถานี ({filteredStations.length})
                     </button>
 
                     <button
                         onClick={() => setShowPatrols(!showPatrols)}
-                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs transition ${showPatrols ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-800 text-gray-500'}`}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition ${showPatrols ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-800 text-gray-500'
+                            }`}
                     >
-                        <Radio className="w-3 h-3" />
-                        <span className="flex-1 text-left">สายตรวจ ({patrols.length})</span>
+                        <Radio className="w-3.5 h-3.5" />
+                        สายตรวจ ({filteredPatrols.length})
                     </button>
 
                     <button
                         onClick={() => setShowRiskZones(!showRiskZones)}
-                        className={`flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs transition ${showRiskZones ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500'}`}
+                        className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition ${showRiskZones ? 'bg-rose-500/20 text-rose-400' : 'bg-gray-800 text-gray-500'
+                            }`}
                     >
-                        <AlertTriangle className="w-3 h-3" />
-                        <span className="flex-1 text-left">จุดเสี่ยง ({riskZones.length})</span>
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        จุดเสี่ยง ({filteredRiskZones.length})
                     </button>
                 </div>
 
-                <div className="mt-3 pt-2 border-t border-gray-800 text-[10px] text-gray-500">
-                    Zoom: {currentZoom} |
-                    {currentZoom < 8 && ' 🌏 ประเทศ'}
-                    {currentZoom >= 8 && currentZoom < 10 && ' 🗺️ ภาค'}
-                    {currentZoom >= 10 && currentZoom < 12 && ' 🏛️ จังหวัด'}
-                    {currentZoom >= 12 && currentZoom < 14 && ' 🏢 อำเภอ'}
-                    {currentZoom >= 14 && ' 📍 สถานี'}
+                {/* Threat Filters */}
+                <div className="border-t border-gray-700 pt-2">
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1.5 font-bold">Threats</p>
+                    <div className="flex flex-wrap gap-1">
+                        {Object.entries(threatFilters).map(([cat, enabled]) => {
+                            const { color, emoji } = getThreatCategoryColor(cat);
+                            return (
+                                <button
+                                    key={cat}
+                                    onClick={() => toggleThreatFilter(cat)}
+                                    className={`px-1.5 py-0.5 rounded text-[10px] transition ${enabled ? 'opacity-100' : 'opacity-40'
+                                        }`}
+                                    style={{
+                                        backgroundColor: enabled ? `${color}30` : '#374151',
+                                        color: enabled ? color : '#6b7280',
+                                    }}
+                                >
+                                    {emoji}
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
-            </div>
 
-            {/* Selected Station Info */}
-            {selectedStation && (
-                <div className="absolute bottom-4 left-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-4 max-w-sm shadow-2xl">
-                    <div className="flex items-start justify-between gap-3">
-                        <div>
-                            <p className="text-xs text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                                <Building2 className="w-3 h-3" /> สถานีตำรวจ
-                            </p>
-                            <p className="text-white font-bold">{selectedStation.name}</p>
-                            <p className="text-gray-400 text-sm mt-1">{selectedStation.address}</p>
-                            <div className="flex gap-3 mt-3">
-                                <div className="text-center">
-                                    <p className="text-emerald-400 font-bold text-lg">{patrolCountByStation[selectedStation.id] || 0}</p>
-                                    <p className="text-gray-500 text-[10px]">สายตรวจ</p>
-                                </div>
-                                <div className="text-center">
-                                    <p className="text-amber-400 font-bold text-lg">{riskZones.filter(z => z.stationId === selectedStation.id).length}</p>
-                                    <p className="text-gray-500 text-[10px]">จุดเสี่ยง</p>
-                                </div>
-                            </div>
-                        </div>
+                {/* Time Mode */}
+                <div className="border-t border-gray-700 pt-2 mt-2">
+                    <div className="flex gap-1">
                         <button
-                            onClick={() => setSelectedStation(null)}
-                            className="text-gray-500 hover:text-white transition p-1"
+                            onClick={() => setTimeMode('live')}
+                            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded text-[10px] transition ${timeMode === 'live' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-500'
+                                }`}
                         >
-                            <X className="w-4 h-4" />
+                            <Zap className="w-3 h-3" />
+                            Live
+                        </button>
+                        <button
+                            onClick={() => setTimeMode('historical')}
+                            className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded text-[10px] transition ${timeMode === 'historical' ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-800 text-gray-500'
+                                }`}
+                        >
+                            <Clock className="w-3 h-3" />
+                            24h
                         </button>
                     </div>
                 </div>
-            )}
 
-            {/* Stats Bar */}
-            <div className="absolute bottom-4 right-4 z-[500] flex gap-3">
-                <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-blue-400">{selectedProvince ? filteredStations.length : stations.length}</p>
-                    <p className="text-[10px] text-gray-500">สถานี</p>
-                </div>
-                <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-cyan-400">{patrols.length}</p>
-                    <p className="text-[10px] text-gray-500">ลาดตระเวน</p>
-                </div>
-                <div className="bg-gray-900/95 border border-gray-700 rounded-lg px-3 py-2 text-center">
-                    <p className="text-lg font-bold text-emerald-400">{provinces.length}</p>
-                    <p className="text-[10px] text-gray-500">จังหวัด</p>
+                <div className="border-t border-gray-700 pt-2 mt-2 text-[10px] text-gray-500 text-center">
+                    Zoom: {currentZoom}
                 </div>
             </div>
 
-            {/* Map */}
+            {/* ===== PROVINCE INFO PANEL ===== */}
+            {provinceInfo && (
+                <div className="absolute top-20 left-4 z-[500] bg-black/80 backdrop-blur-md border border-emerald-500/50 rounded-xl p-4 shadow-2xl w-56">
+                    <div className="flex items-center gap-2 mb-3">
+                        <MapPin className="w-5 h-5 text-emerald-400" />
+                        <h3 className="font-bold text-white">{provinceInfo.name}</h3>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-gray-800 rounded-lg p-2">
+                            <p className="text-lg font-bold text-blue-400">{provinceInfo.stationCount}</p>
+                            <p className="text-[10px] text-gray-500">สถานี</p>
+                        </div>
+                        <div className="bg-gray-800 rounded-lg p-2">
+                            <p className="text-lg font-bold text-cyan-400">{provinceInfo.patrolCount}</p>
+                            <p className="text-[10px] text-gray-500">สายตรวจ</p>
+                        </div>
+                        <div className="bg-gray-800 rounded-lg p-2">
+                            <p className="text-lg font-bold text-rose-400">{provinceInfo.riskCount}</p>
+                            <p className="text-[10px] text-gray-500">จุดเสี่ยง</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setSelectedProvince('')}
+                        className="w-full mt-3 text-xs text-gray-400 hover:text-white transition"
+                    >
+                        ✕ ปิด
+                    </button>
+                </div>
+            )}
+
+            {/* ===== MAP CONTAINER ===== */}
             <MapContainer
-                center={center}
-                zoom={zoom}
+                center={THAILAND_CENTER}
+                zoom={6}
                 className="w-full h-full"
                 zoomControl={false}
                 style={{ background: '#0a0a0a' }}
             >
-                <TileLayer
-                    attribution='&copy; OpenStreetMap &copy; CARTO'
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    maxZoom={20}
-                />
-
-                <MapController center={center} zoom={zoom} />
+                <TileLayer url={MAP_TILES.dark} attribution="&copy; OpenStreetMap" />
+                <MapController center={center} zoom={currentZoom} />
                 <ZoomHandler onZoomChange={setCurrentZoom} />
 
-                {/* Province Boundaries GeoJSON */}
-                {showBoundaries && geoJsonData && (
-                    <GeoJSON
-                        key={geoJsonKey}
-                        data={geoJsonData}
-                        style={getProvinceStyle}
-                    />
-                )}
+                {/* GeoJSON Province Boundaries */}
+                {geoJsonData && <GeoJSON data={geoJsonData} style={geoJsonStyle} />}
 
-                {/* All Stations (dimmed if province is selected) */}
-                {showStations && !selectedProvince && stations.map((station) => (
-                    <Marker
-                        key={station.id}
-                        position={[station.latitude, station.longitude]}
-                        icon={createStationIcon(
-                            station.name,
-                            patrolCountByStation[station.id] || 0,
-                            selectedStation?.id === station.id,
-                            false
-                        )}
-                        eventHandlers={{
-                            click: () => handleStationClick(station)
-                        }}
-                    >
-                        <Popup>
-                            <div className="p-2">
-                                <h4 className="font-bold text-white text-sm">{station.name}</h4>
-                                <p className="text-xs text-gray-400">{station.province?.name}</p>
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-
-                {/* Filtered Stations (when province selected) */}
-                {showStations && selectedProvince && filteredStations.map((station) => (
-                    <Marker
-                        key={station.id}
-                        position={[station.latitude, station.longitude]}
-                        icon={createStationIcon(
-                            station.name,
-                            patrolCountByStation[station.id] || 0,
-                            selectedStation?.id === station.id,
-                            false
-                        )}
-                        eventHandlers={{
-                            click: () => handleStationClick(station)
-                        }}
-                    >
-                        <Popup>
-                            <div className="p-2">
-                                <h4 className="font-bold text-white text-sm">{station.name}</h4>
-                                <p className="text-xs text-gray-400">{station.province?.name}</p>
-                            </div>
-                        </Popup>
-                    </Marker>
-                ))}
-
-                {/* Risk Zones */}
-                {showRiskZones && currentZoom >= 11 && riskZones
-                    .filter(z => !selectedProvince || filteredStations.some(s => s.id === z.stationId))
-                    .map((zone) => (
-                        <Circle
-                            key={zone.id}
-                            center={[zone.latitude, zone.longitude]}
-                            radius={zone.radius || 100}
-                            pathOptions={{
-                                color: getRiskColor(zone.riskLevel),
-                                fillColor: getRiskColor(zone.riskLevel),
-                                fillOpacity: 0.25,
-                                weight: 2,
-                            }}
-                        >
-                            <Popup>
-                                <div className="p-2">
-                                    <h4 className="font-bold text-white text-sm">{zone.name}</h4>
-                                    <p className="text-xs text-gray-400">{zone.description}</p>
-                                    <span className="text-[10px] mt-1 inline-block px-2 py-0.5 rounded" style={{ background: getRiskColor(zone.riskLevel) + '30', color: getRiskColor(zone.riskLevel) }}>{zone.riskLevel}</span>
-                                </div>
-                            </Popup>
-                        </Circle>
-                    ))}
+                {/* Stations */}
+                {showStations &&
+                    zoomShowStations &&
+                    filteredStations
+                        .filter((s) => s.latitude && s.longitude)
+                        .map((station) => (
+                            <Marker
+                                key={station.id}
+                                position={[station.latitude, station.longitude]}
+                                icon={createStationIcon(
+                                    station.name,
+                                    patrolCountByStation[station.id] || 0,
+                                    selectedStation?.id === station.id,
+                                    false
+                                )}
+                                eventHandlers={{ click: () => handleStationClick(station) }}
+                            >
+                                <Popup className="custom-popup">
+                                    <div className="bg-gray-900 text-white p-3 rounded-lg">
+                                        <h3 className="font-bold">{station.name}</h3>
+                                        <p className="text-xs text-gray-400">{station.province?.name}</p>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        ))}
 
                 {/* Patrols */}
-                {showPatrols && currentZoom >= 10 && patrols.map((patrol) => {
-                    const loc = patrol.locations?.[0];
-                    if (!loc) return null;
-
-                    // Filter patrols by province if selected
-                    if (selectedProvince) {
-                        const patrolStation = stations.find(s => s.id === patrol.user?.stationId);
-                        if (patrolStation?.provinceId !== selectedProvince) return null;
-                    }
-
-                    return (
+                {showPatrols &&
+                    zoomShowPatrols &&
+                    filteredPatrols.map((patrol) => (
                         <Marker
                             key={patrol.id}
-                            position={[loc.latitude, loc.longitude]}
-                            icon={createPatrolIcon(patrol.user?.rank || '', true)}
+                            position={[patrol.currentLocation.latitude, patrol.currentLocation.longitude]}
+                            icon={createPatrolIcon(patrol.user?.rank || 'N/A', true)}
                         >
                             <Popup>
-                                <div className="p-2">
-                                    <p className="font-bold text-white text-sm">{patrol.user?.rank} {patrol.user?.firstName}</p>
-                                    <p className="text-xs text-emerald-400">ON DUTY</p>
+                                <div className="bg-gray-900 text-white p-2 rounded">
+                                    <p className="font-bold">
+                                        {patrol.user?.rank} {patrol.user?.firstName}
+                                    </p>
+                                    <p className="text-xs text-gray-400">{patrol.user?.station?.name}</p>
                                 </div>
                             </Popup>
                         </Marker>
-                    );
-                })}
+                    ))}
+
+                {/* Risk Zones */}
+                {showRiskZones &&
+                    zoomShowRiskZones &&
+                    filteredRiskZones
+                        .filter((zone) => zone.latitude && zone.longitude)
+                        .map((zone) => (
+                            <Circle
+                                key={zone.id}
+                                center={[zone.latitude, zone.longitude]}
+                                radius={zone.radius || 200}
+                                pathOptions={{
+                                    color: getRiskColor(zone.riskLevel),
+                                    fillColor: getRiskColor(zone.riskLevel),
+                                    fillOpacity: 0.3,
+                                    weight: 2,
+                                }}
+                            >
+                                <Popup>
+                                    <div className="bg-gray-900 text-white p-2 rounded">
+                                        <p className="font-bold">{zone.name}</p>
+                                        <p className="text-xs text-gray-400">ระดับ: {zone.riskLevel}</p>
+                                    </div>
+                                </Popup>
+                            </Circle>
+                        ))}
             </MapContainer>
+
+            {/* ===== STATION INFO PANEL ===== */}
+            {selectedStation && (
+                <div className="absolute bottom-4 left-4 z-[500] bg-black/90 backdrop-blur-md border border-gray-700 rounded-xl p-4 shadow-2xl w-72">
+                    <button
+                        onClick={() => setSelectedStation(null)}
+                        className="absolute top-2 right-2 text-gray-500 hover:text-white"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                            <Building2 className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-gray-500 uppercase">สถานี</p>
+                            <h3 className="font-bold text-white">{selectedStation.name}</h3>
+                            <p className="text-xs text-gray-400">{selectedStation.province?.name}</p>
+                        </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-700 grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-gray-800 rounded p-2">
+                            <p className="text-gray-500">สายตรวจ</p>
+                            <p className="text-emerald-400 font-bold">
+                                {patrolCountByStation[selectedStation.id] || 0}
+                            </p>
+                        </div>
+                        <div className="bg-gray-800 rounded p-2">
+                            <p className="text-gray-500">พิกัด</p>
+                            <p className="text-gray-300 font-mono text-[9px]">
+                                {selectedStation.latitude?.toFixed(4)},{selectedStation.longitude?.toFixed(4)}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ===== STATS BAR (Bottom) ===== */}
+            <div className="absolute bottom-4 right-4 z-[500] flex gap-2">
+                <div className="bg-black/80 backdrop-blur-md border border-gray-700 rounded-xl px-3 py-2 flex items-center gap-3">
+                    <div className="text-center">
+                        <p className="text-lg font-bold text-blue-400">{filteredStations.length}</p>
+                        <p className="text-[9px] text-gray-500">สถานี</p>
+                    </div>
+                    <div className="h-8 w-px bg-gray-700" />
+                    <div className="text-center">
+                        <p className="text-lg font-bold text-cyan-400">{filteredPatrols.length}</p>
+                        <p className="text-[9px] text-gray-500">สายตรวจ</p>
+                    </div>
+                    <div className="h-8 w-px bg-gray-700" />
+                    <div className="text-center">
+                        <p className="text-lg font-bold text-rose-400">{filteredRiskZones.length}</p>
+                        <p className="text-[9px] text-gray-500">จุดเสี่ยง</p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
