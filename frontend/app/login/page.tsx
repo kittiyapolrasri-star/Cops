@@ -35,7 +35,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#020202] flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-amber-500/30 selection:text-amber-100">
+        <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-amber-500/30 selection:text-amber-100">
 
             {/* Cinematic Background Effects - Power & Dimension */}
             <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-white/10 rounded-[100%] blur-[80px] pointer-events-none opacity-20"></div>
@@ -45,7 +45,7 @@ export default function LoginPage() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[800px] bg-gradient-to-b from-white/5 via-transparent to-transparent transform -skew-x-12 blur-3xl pointer-events-none opacity-20"></div>
 
             {/* Deep Shadows for Contrast */}
-            <div className="absolute bottom-0 left-0 right-0 h-[400px] bg-gradient-to-t from-[#000000] to-transparent pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-[400px] bg-gradient-to-t from-gray-950 to-transparent pointer-events-none"></div>
 
             <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.05] mask-image-linear-gradient(to bottom, transparent, black) pointer-events-none"></div>
 
@@ -137,7 +137,7 @@ export default function LoginPage() {
                         <div className="w-full border-t border-white/5"></div>
                     </div>
                     <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
-                        <span className="bg-[#020202] px-3 text-white/20">System Override</span>
+                        <span className="bg-gray-900 px-3 text-white/20">System Override</span>
                     </div>
                 </div>
 
