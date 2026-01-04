@@ -35,13 +35,13 @@ import {
 
 // ==================== MAP COMPONENTS ====================
 
-function MapController({ center, zoom }: { center: [number, number]; zoom?: number }) {
+function MapController({ center, zoom, trigger }: { center: [number, number]; zoom: number; trigger: number }) {
     const map = useMap();
     useEffect(() => {
-        if (center[0] !== 0 && center[1] !== 0) {
-            map.flyTo(center, zoom || 14, { duration: 1.2 });
+        if (center[0] !== 0 && center[1] !== 0 && trigger > 0) {
+            map.flyTo(center, zoom, { duration: 1.5 });
         }
-    }, [center, zoom, map]);
+    }, [center[0], center[1], zoom, trigger, map]);
     return null;
 }
 
@@ -81,6 +81,7 @@ export default function DashboardMap() {
     // Map state
     const [center, setCenter] = useState<[number, number]>(THAILAND_CENTER);
     const [currentZoom, setCurrentZoom] = useState(6);
+    const [flyTrigger, setFlyTrigger] = useState(0); // Increment to force fly animation
     const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
     const [selectedStation, setSelectedStation] = useState<string | null>(null);
 
@@ -155,7 +156,8 @@ export default function DashboardMap() {
             const { lat, lng, zoom } = event.detail;
             if (lat && lng) {
                 setCenter([lat, lng]);
-                if (zoom) setCurrentZoom(zoom);
+                setCurrentZoom(zoom || ZOOM_LEVELS.STATION);
+                setFlyTrigger((prev) => prev + 1);
             }
         };
         window.addEventListener('flyToLocation', handleFlyTo as EventListener);
@@ -233,10 +235,19 @@ export default function DashboardMap() {
     // Handle province selection
     const handleProvinceSelect = (provinceId: string) => {
         setSelectedProvince(provinceId);
+        setSelectedStation(null);
+        setSelectedResult(null);
+
+        if (!provinceId) {
+            // Reset if cleared
+            return;
+        }
+
         const prov = provinces.find((p) => p.id === provinceId);
         if (prov?.latitude && prov?.longitude) {
             setCenter([prov.latitude, prov.longitude]);
             setCurrentZoom(ZOOM_LEVELS.PROVINCE);
+            setFlyTrigger((prev) => prev + 1); // Force fly animation
         }
     };
 
@@ -251,15 +262,18 @@ export default function DashboardMap() {
             // Reset to Thailand view
             setCenter(THAILAND_CENTER);
             setCurrentZoom(6);
+            setFlyTrigger((prev) => prev + 1);
         } else {
             // Calculate center of all provinces in this bureau
             const bureauProvinces = provinces.filter((p) => p.bureauId === bureauId);
             if (bureauProvinces.length > 0) {
-                const avgLat = bureauProvinces.reduce((sum, p) => sum + (p.latitude || 0), 0) / bureauProvinces.length;
-                const avgLng = bureauProvinces.reduce((sum, p) => sum + (p.longitude || 0), 0) / bureauProvinces.length;
-                if (avgLat && avgLng) {
+                const validProvinces = bureauProvinces.filter((p) => p.latitude && p.longitude);
+                if (validProvinces.length > 0) {
+                    const avgLat = validProvinces.reduce((sum, p) => sum + p.latitude, 0) / validProvinces.length;
+                    const avgLng = validProvinces.reduce((sum, p) => sum + p.longitude, 0) / validProvinces.length;
                     setCenter([avgLat, avgLng]);
                     setCurrentZoom(ZOOM_LEVELS.REGION);
+                    setFlyTrigger((prev) => prev + 1);
                 }
             }
         }
@@ -282,12 +296,15 @@ export default function DashboardMap() {
             } else {
                 setCurrentZoom(ZOOM_LEVELS.DISTRICT);
             }
+
+            setFlyTrigger((prev) => prev + 1);
         }
     };
 
     // Handle station click
     const handleStationClick = (station: any) => {
         setCenter([station.latitude, station.longitude]);
+        setCurrentZoom(ZOOM_LEVELS.STATION);
         setSelectedStation(station.id);
         setSelectedResult({
             type: 'station',
@@ -297,6 +314,7 @@ export default function DashboardMap() {
             lng: station.longitude,
             data: station,
         });
+        setFlyTrigger((prev) => prev + 1);
     };
 
     // Reset view
@@ -307,6 +325,7 @@ export default function DashboardMap() {
         setSelectedResult(null);
         setCenter(THAILAND_CENTER);
         setCurrentZoom(6);
+        setFlyTrigger((prev) => prev + 1);
     };
 
     // Toggle threat filter
@@ -515,7 +534,7 @@ export default function DashboardMap() {
                 style={{ background: '#0a0a0a' }}
             >
                 <TileLayer url={MAP_TILES.dark} attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
-                <MapController center={center} zoom={currentZoom} />
+                <MapController center={center} zoom={currentZoom} trigger={flyTrigger} />
                 <ZoomHandler onZoomChange={setCurrentZoom} />
 
                 {/* GeoJSON Province Boundaries */}
