@@ -1,5 +1,5 @@
 import { IsString, IsNumber, IsOptional, IsEnum, IsInt, Min } from 'class-validator';
-import { RiskLevel } from '@prisma/client';
+import { RiskLevel, RiskCategory } from '@prisma/client';
 
 export class CreateRiskZoneDto {
     @IsString()
@@ -8,6 +8,10 @@ export class CreateRiskZoneDto {
     @IsString()
     @IsOptional()
     description?: string;
+
+    @IsEnum(RiskCategory)
+    @IsOptional()
+    category?: RiskCategory;
 
     @IsNumber()
     latitude: number;

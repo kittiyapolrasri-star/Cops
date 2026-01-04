@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Save, MapPin, AlertTriangle, Shield, Loader } from 'lucide-react';
-import { riskzoneApi } from '@/lib/api';
+import { riskzoneApi, organizationApi } from '@/lib/api';
 
 interface AddRiskZoneModalProps {
     isOpen: boolean;
@@ -13,22 +13,42 @@ interface AddRiskZoneModalProps {
 export default function AddRiskZoneModal({ isOpen, onClose, onSuccess }: AddRiskZoneModalProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [stations, setStations] = useState<any[]>([]);
 
     const [formData, setFormData] = useState({
         name: '',
         description: '',
+        category: 'OTHER',
         latitude: '',
         longitude: '',
         radius: 100,
         riskLevel: 'MEDIUM',
-        requiredCheckIns: 3
+        requiredCheckIns: 3,
+        stationId: ''
     });
+
+    useEffect(() => {
+        if (isOpen) {
+            organizationApi.getStations().then(res => {
+                setStations(res.data || []);
+                if (res.data?.length > 0 && !formData.stationId) {
+                    setFormData(prev => ({ ...prev, stationId: res.data[0].id }));
+                }
+            }).catch(console.error);
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+
+        if (!formData.stationId) {
+            setError('กรุณาเลือกสถานี');
+            return;
+        }
+
         setIsLoading(true);
 
         try {
@@ -84,6 +104,38 @@ export default function AddRiskZoneModal({ isOpen, onClose, onSuccess }: AddRisk
                             className="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition"
                             placeholder="e.g. Red Light District A"
                         />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-400 mb-1">สถานี</label>
+                            <select
+                                required
+                                value={formData.stationId}
+                                onChange={e => setFormData({ ...formData, stationId: e.target.value })}
+                                className="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition"
+                            >
+                                <option value="">เลือกสถานี...</option>
+                                {stations.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-gray-400 mb-1">ประเภทภัย</label>
+                            <select
+                                value={formData.category}
+                                onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                className="w-full bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-amber-500 transition"
+                            >
+                                <option value="DRUGS">💊 ยาเสพติด</option>
+                                <option value="WEAPONS">🔫 อาวุธ</option>
+                                <option value="TRAFFIC">🚗 จราจร</option>
+                                <option value="VIOLENT">⚠️ ประทุษร้าย</option>
+                                <option value="THEFT">🏃 ลักทรัพย์</option>
+                                <option value="OTHER">📋 อื่นๆ</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div>
