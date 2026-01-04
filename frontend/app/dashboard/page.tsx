@@ -83,15 +83,7 @@ export default function DashboardPage() {
             {/* ===== FLOATING STATS HUD (Top Center) ===== */}
             <FloatingStatsHUD stats={stats} />
 
-            {/* ===== LIVE SURVEILLANCE BADGE (Top Left) ===== */}
-            <div className="absolute top-4 left-4 z-[500] bg-black/70 backdrop-blur-xl border border-emerald-500/30 px-4 py-2 rounded-xl flex items-center gap-3 shadow-lg shadow-emerald-500/10">
-                <Activity className="w-4 h-4 text-emerald-500 animate-pulse" />
-                <span className="text-xs font-bold text-white tracking-wider">GOD'S EYE VIEW</span>
-                <div className="h-4 w-px bg-white/20"></div>
-                <span className="text-xs text-gray-400 font-mono">
-                    {currentTime.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
-            </div>
+            {/* GOD'S EYE VIEW badge removed - DashboardMap has its own top-left filter bar */}
 
             {/* ===== HEADER INFO (Top Right) ===== */}
             <div className="absolute top-4 right-4 z-[500] flex items-center gap-3">
@@ -119,16 +111,7 @@ export default function DashboardPage() {
                 onToggle={() => setFeedCollapsed(!feedCollapsed)}
             />
 
-            {/* ===== ZOOM LEVEL / MAP INFO (Bottom Left) ===== */}
-            <div className="absolute bottom-4 left-4 z-[500] bg-black/70 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/10">
-                <div className="flex items-center gap-4 text-xs text-gray-400">
-                    <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {currentTime.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                    <span className="text-emerald-400 font-bold">● LIVE</span>
-                </div>
-            </div>
+            {/* Bottom-left info removed - DashboardMap has province info panel */}
         </div>
     );
 }
