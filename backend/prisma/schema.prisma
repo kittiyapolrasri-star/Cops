@@ -83,6 +83,8 @@ model Station {
   patrolPlans PatrolPlan[]       // Layer 4: แผนการตรวจ
   crimeRecords CrimeRecord[]     // Layer 3: Crime Mapping
   citizenTips CitizenTip[]       // Layer 7: เบาะแสประชาชน
+  dutyZones   DutyZone[]         // Layer 5: เขตปฏิบัติงาน
+  sosAlerts   SOSAlert[]         // Layer 6: SOS
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
@@ -114,6 +116,14 @@ model User {
   // Layer 3 & 7 relations
   reportedCrimes        CrimeRecord[]          @relation("CrimeReporter")
   assignedTips          CitizenTip[]           @relation("TipAssignee")
+  // Layer 5 GPS Compliance relations
+  gpsLogs               GPSLog[]               @relation("UserGPSLogs")
+  violations            ComplianceViolation[]  @relation("UserViolations")
+  acknowledgedViolations ComplianceViolation[] @relation("ViolationAcknowledger")
+  // Layer 6 SOS relations
+  sosAlerts             SOSAlert[]             @relation("UserSOSAlerts")
+  sosResponses          SOSResponse[]          @relation("SOSResponseUser")
+  respondedSOSAlerts    SOSAlert[]             @relation("SOSResponder")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -482,5 +492,132 @@ model CitizenTip {
   @@index([stationId, status])
   @@index([category, status])
   @@index([tipCode])
+}
+
+// ==================== GPS COMPLIANCE (Layer 5) ====================
+
+enum ComplianceStatus {
+  COMPLIANT         // อยู่ในเขต
+  OUT_OF_ZONE       // ออกนอกเขต
+  OFFLINE           // ไม่มีสัญญาณ
+  STATIONARY_LONG   // หยุดนิ่งนานเกินไป
+}
+
+model GPSLog {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation("UserGPSLogs", fields: [userId], references: [id])
+  latitude    Float
+  longitude   Float
+  accuracy    Float?   // ความแม่นยำ GPS (เมตร)
+  speed       Float?   // ความเร็ว (km/h)
+  heading     Float?   // ทิศทาง (องศา)
+  altitude    Float?
+  battery     Int?     // ระดับแบตเตอรี่ (%)
+  isCharging  Boolean?
+  timestamp   DateTime @default(now())
+
+  @@index([userId, timestamp(sort: Desc)])
+  @@index([timestamp(sort: Desc)])
+}
+
+model ComplianceViolation {
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation("UserViolations", fields: [userId], references: [id])
+  type        ComplianceStatus
+  latitude    Float?
+  longitude   Float?
+  startedAt   DateTime         @default(now())
+  endedAt     DateTime?
+  duration    Int?             // ระยะเวลา (นาที)
+  note        String?
+  isAcknowledged Boolean       @default(false)
+  acknowledgedById String?
+  acknowledgedBy   User?       @relation("ViolationAcknowledger", fields: [acknowledgedById], references: [id])
+  acknowledgedAt   DateTime?
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, startedAt(sort: Desc)])
+  @@index([type, startedAt])
+  @@index([isAcknowledged, startedAt])
+}
+
+model DutyZone {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  coordinates Json     // GeoJSON polygon
+  stationId   String
+  station     Station  @relation(fields: [stationId], references: [id])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([stationId, isActive])
+}
+
+// ==================== SOS EMERGENCY (Layer 6) ====================
+
+enum SOSStatus {
+  ACTIVE            // กำลังแจ้งเหตุ
+  RESPONDING        // กำลังตอบรับ
+  RESOLVED          // แก้ไขแล้ว
+  FALSE_ALARM       // แจ้งเหตุผิดพลาด
+  CANCELLED         // ยกเลิก
+}
+
+enum SOSType {
+  EMERGENCY         // ฉุกเฉินทั่วไป
+  UNDER_ATTACK      // ถูกโจมตี
+  NEED_BACKUP       // ต้องการกำลังเสริม
+  MEDICAL           // เหตุทางการแพทย์
+  VEHICLE_BREAKDOWN // รถเสีย
+  SUSPECT_PURSUIT   // ไล่ล่าผู้ต้องสงสัย
+}
+
+model SOSAlert {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation("UserSOSAlerts", fields: [userId], references: [id])
+  type          SOSType     @default(EMERGENCY)
+  status        SOSStatus   @default(ACTIVE)
+  latitude      Float
+  longitude     Float
+  address       String?
+  message       String?
+  audioUrl      String?     // บันทึกเสียง
+  photos        String[]    // รูปถ่าย
+  stationId     String?
+  station       Station?    @relation(fields: [stationId], references: [id])
+  respondedById String?
+  respondedBy   User?       @relation("SOSResponder", fields: [respondedById], references: [id])
+  respondedAt   DateTime?
+  resolvedAt    DateTime?
+  resolutionNote String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Related responses
+  responses     SOSResponse[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([stationId, status])
+}
+
+model SOSResponse {
+  id          String    @id @default(uuid())
+  alertId     String
+  alert       SOSAlert  @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("SOSResponseUser", fields: [userId], references: [id])
+  message     String?
+  latitude    Float?
+  longitude   Float?
+  eta         Int?      // เวลาถึงโดยประมาณ (นาที)
+  createdAt   DateTime  @default(now())
+
+  @@index([alertId, createdAt])
 }
 

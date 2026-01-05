@@ -16,6 +16,8 @@ import { PoiModule } from './poi/poi.module';
 import { PatrolPlanModule } from './patrol-plan/patrol-plan.module';
 import { CrimeModule } from './crime/crime.module';
 import { CitizenTipModule } from './citizen-tip/citizen-tip.module';
+import { SosModule } from './sos/sos.module';
+import { GpsComplianceModule } from './gps-compliance/gps-compliance.module';
 
 @Module({
     imports: [
@@ -41,6 +43,8 @@ import { CitizenTipModule } from './citizen-tip/citizen-tip.module';
         PatrolPlanModule,
         CrimeModule,
         CitizenTipModule,
+        SosModule,
+        GpsComplianceModule,
     ],
     providers: [
         // Apply throttler globally

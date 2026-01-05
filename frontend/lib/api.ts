@@ -223,3 +223,64 @@ export const citizenTipApi = {
     getStats: (stationId?: string) =>
         api.get('/tips/stats', { params: { stationId } }),
 };
+
+// ==================== SOS API (Layer 6) ====================
+export const sosApi = {
+    // Create alert
+    create: (data: { type?: string; latitude: number; longitude: number; address?: string; message?: string; audioUrl?: string; photos?: string[] }) =>
+        api.post('/sos', data),
+
+    // Get alerts
+    getAll: (params?: { stationId?: string; status?: string; type?: string; userId?: string }) =>
+        api.get('/sos', { params }),
+    getActive: (stationId?: string) =>
+        api.get('/sos/active', { params: { stationId } }),
+    getById: (id: string) => api.get(`/sos/${id}`),
+
+    // Respond
+    respond: (id: string, data: { message?: string; latitude?: number; longitude?: number; eta?: number }) =>
+        api.post(`/sos/${id}/respond`, data),
+
+    // Resolve/Cancel
+    resolve: (id: string, resolutionNote?: string) =>
+        api.patch(`/sos/${id}/resolve`, { resolutionNote }),
+    markFalseAlarm: (id: string, note?: string) =>
+        api.patch(`/sos/${id}/false-alarm`, { note }),
+    cancel: (id: string) => api.patch(`/sos/${id}/cancel`),
+
+    // Stats
+    getStats: (stationId?: string) =>
+        api.get('/sos/stats', { params: { stationId } }),
+};
+
+// ==================== GPS COMPLIANCE API (Layer 5) ====================
+export const gpsComplianceApi = {
+    // GPS Logging
+    logPosition: (data: { latitude: number; longitude: number; accuracy?: number; speed?: number; heading?: number; altitude?: number; battery?: number; isCharging?: boolean }) =>
+        api.post('/gps-compliance/log', data),
+    getUserHistory: (userId: string, hours?: number) =>
+        api.get(`/gps-compliance/history/${userId}`, { params: { hours } }),
+    getLatestPositions: (stationId?: string) =>
+        api.get('/gps-compliance/latest', { params: { stationId } }),
+
+    // Duty Zones
+    createDutyZone: (data: { name: string; description?: string; coordinates: any; stationId: string }) =>
+        api.post('/gps-compliance/zones', data),
+    getDutyZones: (stationId?: string) =>
+        api.get('/gps-compliance/zones', { params: { stationId } }),
+    updateDutyZone: (id: string, data: any) =>
+        api.patch(`/gps-compliance/zones/${id}`, data),
+    deleteDutyZone: (id: string) =>
+        api.delete(`/gps-compliance/zones/${id}`),
+
+    // Violations
+    getViolations: (params?: { userId?: string; stationId?: string; type?: string; isAcknowledged?: boolean }) =>
+        api.get('/gps-compliance/violations', { params }),
+    acknowledgeViolation: (id: string) =>
+        api.patch(`/gps-compliance/violations/${id}/acknowledge`),
+
+    // Stats
+    getStats: (stationId?: string) =>
+        api.get('/gps-compliance/stats', { params: { stationId } }),
+};
+
