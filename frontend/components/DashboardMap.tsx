@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, GeoJSON, useMap, useMapEvents, Polyline } from 'react-leaflet';
 import L from 'leaflet';
-import { trackingApi, riskzoneApi, organizationApi } from '@/lib/api';
+import { trackingApi, riskzoneApi, organizationApi, poiApi, crimeApi, sosApi } from '@/lib/api';
 import {
     createStationIcon,
     createPatrolIcon,
@@ -31,6 +31,9 @@ import {
     ChevronDown,
     RotateCcw,
     X,
+    Flame,
+    Siren,
+    LandPlot,
 } from 'lucide-react';
 
 // ==================== MAP COMPONENTS ====================
@@ -78,6 +81,11 @@ export default function DashboardMap() {
     const [geoJsonData, setGeoJsonData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
+    // ===== NEW LAYER DATA =====
+    const [pois, setPois] = useState<any[]>([]);
+    const [crimes, setCrimes] = useState<any[]>([]);
+    const [sosAlerts, setSosAlerts] = useState<any[]>([]);
+
     // Map state
     const [center, setCenter] = useState<[number, number]>(THAILAND_CENTER);
     const [currentZoom, setCurrentZoom] = useState(6);
@@ -93,6 +101,10 @@ export default function DashboardMap() {
     const [showStations, setShowStations] = useState(true);
     const [showPatrols, setShowPatrols] = useState(true);
     const [showRiskZones, setShowRiskZones] = useState(true);
+    // New layer toggles
+    const [showPois, setShowPois] = useState(false);
+    const [showCrimes, setShowCrimes] = useState(false);
+    const [showSos, setShowSos] = useState(true);
 
     // ===== THREAT CATEGORY FILTERS =====
     const [threatFilters, setThreatFilters] = useState({
@@ -121,12 +133,15 @@ export default function DashboardMap() {
                 ? trackingApi.getActivePatrols()
                 : trackingApi.getHistoricalPatrols(undefined, 24);
 
-            const [patrolRes, riskRes, stationRes, bureauRes, provinceRes] = await Promise.all([
+            const [patrolRes, riskRes, stationRes, bureauRes, provinceRes, poiRes, crimeRes, sosRes] = await Promise.all([
                 patrolPromise,
                 riskzoneApi.getAll(),
                 organizationApi.getStations(),
                 organizationApi.getBureaus(),
                 organizationApi.getProvinces(),
+                poiApi.getAll(),
+                crimeApi.getHeatmap(),
+                sosApi.getActive(),
             ]);
 
             if (patrolRes.data) setPatrols(patrolRes.data);
@@ -134,6 +149,9 @@ export default function DashboardMap() {
             if (stationRes.data) setStations(stationRes.data);
             if (bureauRes.data) setBureaus(bureauRes.data);
             if (provinceRes.data) setProvinces(provinceRes.data);
+            if (poiRes.data) setPois(poiRes.data);
+            if (crimeRes.data) setCrimes(crimeRes.data);
+            if (sosRes.data) setSosAlerts(sosRes.data);
         } catch (err) {
             console.error('Map data fetch error', err);
         } finally {
@@ -466,6 +484,34 @@ export default function DashboardMap() {
                         <AlertTriangle className="w-3 h-3" />
                         <span>จุดเสี่ยง ({filteredRiskZones.length})</span>
                     </button>
+
+                    {/* New Layers */}
+                    <button
+                        onClick={() => setShowPois(!showPois)}
+                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] transition ${showPois ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-800 text-gray-500'
+                            }`}
+                    >
+                        <LandPlot className="w-3 h-3" />
+                        <span>POI ({pois.length})</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowCrimes(!showCrimes)}
+                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] transition ${showCrimes ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-800 text-gray-500'
+                            }`}
+                    >
+                        <Flame className="w-3 h-3" />
+                        <span>อาชญากรรม ({crimes.length})</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowSos(!showSos)}
+                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] transition ${showSos ? 'bg-red-500/20 text-red-400 animate-pulse' : 'bg-gray-800 text-gray-500'
+                            }`}
+                    >
+                        <Siren className="w-3 h-3" />
+                        <span>SOS ({sosAlerts.length})</span>
+                    </button>
                 </div>
 
                 {/* Threat Filters */}
@@ -641,6 +687,83 @@ export default function DashboardMap() {
                         </Circle>
                     );
                 })}
+
+                {/* POI Markers */}
+                {showPois && pois.filter((poi: any) => poi.latitude && poi.longitude).map((poi: any) => (
+                    <Marker
+                        key={poi.id}
+                        position={[poi.latitude, poi.longitude]}
+                        icon={L.divIcon({
+                            className: 'custom-marker',
+                            html: `<div style="background: #8b5cf6; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">📍</div>`,
+                            iconSize: [28, 28],
+                            iconAnchor: [14, 14],
+                        })}
+                    >
+                        <Popup>
+                            <div className="bg-gray-900 text-white p-2 rounded">
+                                <p className="font-bold text-sm">{poi.name}</p>
+                                <p className="text-xs text-purple-400">{poi.category}</p>
+                                <p className="text-xs text-gray-400">{poi.address}</p>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
+
+                {/* Crime Heatmap (as circles) */}
+                {showCrimes && crimes.filter((crime: any) => crime.latitude && crime.longitude).map((crime: any) => (
+                    <Circle
+                        key={crime.id}
+                        center={[crime.latitude, crime.longitude]}
+                        radius={100}
+                        pathOptions={{
+                            color: '#f97316',
+                            fillColor: '#f97316',
+                            fillOpacity: 0.4,
+                            weight: 1,
+                        }}
+                    >
+                        <Popup>
+                            <div className="bg-gray-900 text-white p-2 rounded">
+                                <p className="font-bold text-sm">{crime.type}</p>
+                                <p className="text-xs text-gray-400">{crime.address}</p>
+                                <p className="text-xs text-orange-400">
+                                    {new Date(crime.occurredAt).toLocaleDateString('th-TH')}
+                                </p>
+                            </div>
+                        </Popup>
+                    </Circle>
+                ))}
+
+                {/* SOS Alerts (Pulsing markers) */}
+                {showSos && sosAlerts.map((sos: any) => (
+                    <Marker
+                        key={sos.id}
+                        position={[sos.latitude, sos.longitude]}
+                        icon={L.divIcon({
+                            className: 'sos-marker',
+                            html: `
+                                <div style="position: relative;">
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(239,68,68,0.3); border-radius: 50%; animation: sos-pulse 1.5s ease-out infinite;"></div>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 28px; height: 28px; background: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 0 15px rgba(239,68,68,0.7);">
+                                        <span style="color: white; font-weight: bold; font-size: 12px;">SOS</span>
+                                    </div>
+                                </div>
+                            `,
+                            iconSize: [40, 40],
+                            iconAnchor: [20, 20],
+                        })}
+                    >
+                        <Popup>
+                            <div className="bg-gray-900 text-white p-2 rounded">
+                                <p className="font-bold text-sm text-red-400">🚨 SOS Alert</p>
+                                <p className="text-xs text-white">{sos.user?.firstName} {sos.user?.lastName}</p>
+                                <p className="text-xs text-gray-400">{sos.type}</p>
+                                <p className="text-xs text-gray-400">{sos.message}</p>
+                            </div>
+                        </Popup>
+                    </Marker>
+                ))}
 
                 {/* Selected Location Marker */}
                 {selectedResult && selectedResult.type === 'location' && (
