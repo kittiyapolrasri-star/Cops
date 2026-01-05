@@ -85,8 +85,8 @@ export default function DashboardPage() {
 
             {/* GOD'S EYE VIEW badge removed - DashboardMap has its own top-left filter bar */}
 
-            {/* ===== HEADER INFO (Below Map Layers) ===== */}
-            <div className="absolute top-[260px] right-4 z-[500] flex items-center gap-3">
+            {/* ===== HEADER INFO (Bottom Left) ===== */}
+            <div className="absolute bottom-6 left-6 z-[500] flex items-center gap-3">
                 {/* Notification Bell */}
                 <div className="bg-black/70 backdrop-blur-xl rounded-xl p-2 border border-white/10">
                     <NotificationBell />
@@ -96,7 +96,7 @@ export default function DashboardPage() {
                 <div className="bg-black/70 backdrop-blur-xl rounded-xl px-4 py-2 border border-white/10 flex items-center gap-3">
                     <div className="text-right">
                         <p className="text-sm font-bold text-white">{user?.rank} {user?.firstName}</p>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-wider">{user?.role}</p>
+                        <p className="text-xs text-gray-500 uppercase tracking-wider">{user?.role}</p>
                     </div>
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center">
                         <span className="text-sm font-bold text-white">{user?.firstName?.charAt(0)}</span>
