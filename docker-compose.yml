@@ -59,10 +59,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://43.229.133.251:4005
     container_name: cops-frontend
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://43.229.133.251:4005
     ports:
       - "3000:3000"
     depends_on:
