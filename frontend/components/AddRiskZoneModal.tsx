@@ -131,8 +131,6 @@ export default function AddRiskZoneModal({ isOpen, onClose, onSuccess }: AddRisk
                                 <option value="DRUGS">💊 ยาเสพติด</option>
                                 <option value="WEAPONS">🔫 อาวุธ</option>
                                 <option value="TRAFFIC">🚗 จราจร</option>
-                                <option value="VIOLENT">⚠️ ประทุษร้าย</option>
-                                <option value="THEFT">🏃 ลักทรัพย์</option>
                                 <option value="OTHER">📋 อื่นๆ</option>
                             </select>
                         </div>

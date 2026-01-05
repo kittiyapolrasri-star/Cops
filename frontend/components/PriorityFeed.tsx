@@ -41,7 +41,7 @@ const getIncidentCategory = (incident: Incident): string => {
     if (incident.items && incident.items.length > 0) {
         return incident.items[0].category;
     }
-    return 'OTHERS';
+    return 'OTHER';
 };
 
 export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }: PriorityFeedProps) {

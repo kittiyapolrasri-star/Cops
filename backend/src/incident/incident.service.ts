@@ -124,11 +124,11 @@ export class IncidentService {
         const preventionCount = incidents.filter(i => i.type === 'PREVENTION').length;
         const suppressionCount = incidents.filter(i => i.type === 'SUPPRESSION').length;
 
-        const itemStats = {
+        const itemStats: Record<string, number> = {
             TRAFFIC: 0,
             DRUGS: 0,
             WEAPONS: 0,
-            OTHERS: 0,
+            OTHER: 0,
         };
 
         incidents.forEach(incident => {

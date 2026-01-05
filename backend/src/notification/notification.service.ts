@@ -36,14 +36,32 @@ export class NotificationService {
         return notification;
     }
 
+    // Helper to build OR conditions for notification queries
+    private buildNotificationConditions(userId?: string, stationId?: string) {
+        const conditions: any[] = [];
+
+        // Add user-specific notifications if userId is provided
+        if (userId) {
+            conditions.push({ userId });
+        }
+
+        // Add station-specific notifications if stationId is provided
+        if (stationId) {
+            conditions.push({ stationId });
+        }
+
+        // Always include broadcast notifications (where both userId and stationId are null)
+        conditions.push({ userId: null, stationId: null });
+
+        return conditions;
+    }
+
     async findAll(userId?: string, stationId?: string, limit: number = 50) {
+        const conditions = this.buildNotificationConditions(userId, stationId);
+
         return this.prisma.notification.findMany({
             where: {
-                OR: [
-                    { userId },
-                    { stationId },
-                    { userId: null, stationId: null }, // Broadcast notifications
-                ],
+                OR: conditions,
             },
             orderBy: { createdAt: 'desc' },
             take: limit,
@@ -58,13 +76,11 @@ export class NotificationService {
     }
 
     async markAllAsRead(userId: string, stationId?: string) {
+        const conditions = this.buildNotificationConditions(userId, stationId);
+
         return this.prisma.notification.updateMany({
             where: {
-                OR: [
-                    { userId },
-                    { stationId },
-                    { userId: null, stationId: null },
-                ],
+                OR: conditions,
                 isRead: false,
             },
             data: { isRead: true },
@@ -72,15 +88,16 @@ export class NotificationService {
     }
 
     async getUnreadCount(userId?: string, stationId?: string) {
-        return this.prisma.notification.count({
+        const conditions = this.buildNotificationConditions(userId, stationId);
+
+        const count = await this.prisma.notification.count({
             where: {
-                OR: [
-                    { userId },
-                    { stationId },
-                    { userId: null, stationId: null },
-                ],
+                OR: conditions,
                 isRead: false,
             },
         });
+
+        return { count };
     }
 }
+

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -78,10 +78,16 @@ export default function PatrolPage() {
         }
     };
 
+    // Use ref to track patrolling state for the geolocation callback (avoids closure issues)
+    const isPatrollingRef = useRef(false);
+
     const startPatrol = useCallback(async () => {
         if ('geolocation' in navigator) {
             try {
                 await trackingApi.startPatrol();
+
+                // Set ref BEFORE starting watchPosition to avoid race condition
+                isPatrollingRef.current = true;
 
                 const id = navigator.geolocation.watchPosition(
                     (position) => {
@@ -92,7 +98,8 @@ export default function PatrolPage() {
                             timestamp: new Date(),
                         };
                         setLocation(newLoc);
-                        if (isPatrolling) { // Only send if actively patrolling
+                        // Use ref instead of state to check patrolling status
+                        if (isPatrollingRef.current) {
                             updateServerLocation(newLoc);
                         }
                     },
@@ -110,15 +117,19 @@ export default function PatrolPage() {
                 setIsPatrolling(true);
                 setPatrolStartTime(new Date());
             } catch (err) {
+                isPatrollingRef.current = false; // Reset on error
                 alert('ไม่สามารถเริ่มลาดตระเวนได้: ' + (err as any).message);
             }
         } else {
             alert('เบราว์เซอร์นี้ไม่รองรับ Geolocation');
         }
-    }, [isPatrolling]);
+    }, []);
 
     const endPatrol = useCallback(async () => {
         try {
+            // Stop sending location updates immediately
+            isPatrollingRef.current = false;
+
             await trackingApi.endPatrol();
             if (watchId !== null) {
                 navigator.geolocation.clearWatch(watchId);
@@ -219,8 +230,8 @@ export default function PatrolPage() {
                 <button
                     onClick={isPatrolling ? endPatrol : startPatrol}
                     className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 transition shadow-lg ${isPatrolling
-                            ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20'
-                            : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
+                        ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-rose-900/20'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/20'
                         }`}
                 >
                     <Radio className="w-6 h-6 animate-pulse" />
@@ -322,17 +333,35 @@ function IncidentModal({
         );
     };
 
+    // Helper function to get category for an item
+    const getCategoryForItem = (item: string): string => {
+        for (const cat of suppressionCategories) {
+            if (cat.items.includes(item)) {
+                return cat.category;
+            }
+        }
+        return 'OTHERS';
+    };
+
     const handleSubmit = async () => {
         if (!location) {
             alert("Waiting for location...");
             return;
         }
         setSubmitting(true);
+
+        // Build items array with proper category mapping
+        const items = selectedItems.map(item => ({
+            category: getCategoryForItem(item),
+            itemType: item,
+        }));
+
         await onSubmit({
             type,
-            description: description + (selectedItems.length > 0 ? ` [Items: ${selectedItems.join(', ')}]` : ''),
+            description,
             latitude: location.latitude,
             longitude: location.longitude,
+            items: items.length > 0 ? items : undefined,
         });
         setSubmitting(false);
     };
@@ -372,8 +401,8 @@ function IncidentModal({
                                                 key={item}
                                                 onClick={() => toggleItem(item)}
                                                 className={`px-4 py-2 rounded-lg text-xs font-bold transition border ${selectedItems.includes(item)
-                                                        ? 'bg-white text-black border-white'
-                                                        : 'bg-white/5 text-gray-400 border-white/5 hover:border-white/20'
+                                                    ? 'bg-white text-black border-white'
+                                                    : 'bg-white/5 text-gray-400 border-white/5 hover:border-white/20'
                                                     }`}
                                             >
                                                 {item}

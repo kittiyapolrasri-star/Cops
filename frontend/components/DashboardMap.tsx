@@ -635,7 +635,7 @@ export default function DashboardMap() {
                                 <div className="bg-gray-900 text-white p-2 rounded">
                                     <p className="font-bold text-sm">{zone.name}</p>
                                     <p className="text-xs text-gray-400">ระดับ: {zone.riskLevel}</p>
-                                    <p className="text-xs text-gray-400">ตรวจ: {zone.requiredFrequency}x/วัน</p>
+                                    <p className="text-xs text-gray-400">ตรวจ: {zone.requiredCheckIns || 1}x/วัน</p>
                                 </div>
                             </Popup>
                         </Circle>

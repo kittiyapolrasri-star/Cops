@@ -10,9 +10,9 @@ interface FeedItem {
     description?: string;
     latitude: number;
     longitude: number;
-    timestamp: string;
-    status: string;
-    reportedBy?: {
+    createdAt: string;
+    isResolved: boolean;
+    user?: {
         rank: string;
         firstName: string;
         lastName: string;
@@ -20,6 +20,7 @@ interface FeedItem {
 }
 
 function formatTimeAgo(dateString: string) {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
 
@@ -62,9 +63,9 @@ function FeedItemCard({ item }: { item: FeedItem }) {
                 <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
                         <p className="text-xs font-bold text-gray-300 uppercase tracking-wide">
-                            {item.reportedBy ? `${item.reportedBy.rank} ${item.reportedBy.firstName}` : 'Unknown Officer'}
+                            {item.user ? `${item.user.rank} ${item.user.firstName}` : 'Unknown Officer'}
                         </p>
-                        <span className="text-[10px] text-gray-500 font-mono">{formatTimeAgo(item.timestamp)}</span>
+                        <span className="text-[10px] text-gray-500 font-mono">{formatTimeAgo(item.createdAt)}</span>
                     </div>
 
                     <p className="text-sm text-white mt-1 font-medium leading-relaxed">
