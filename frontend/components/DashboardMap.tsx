@@ -753,6 +753,7 @@ export default function DashboardMap() {
                             iconSize: [40, 40],
                             iconAnchor: [20, 20],
                         })}
+                        zIndexOffset={1000}
                     >
                         <Popup>
                             <div className="bg-gray-900 text-white p-2 rounded">
