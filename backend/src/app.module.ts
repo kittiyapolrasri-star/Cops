@@ -14,6 +14,8 @@ import { NotificationModule } from './notification/notification.module';
 import { OrganizationModule } from './organization/organization.module';
 import { PoiModule } from './poi/poi.module';
 import { PatrolPlanModule } from './patrol-plan/patrol-plan.module';
+import { CrimeModule } from './crime/crime.module';
+import { CitizenTipModule } from './citizen-tip/citizen-tip.module';
 
 @Module({
     imports: [
@@ -37,6 +39,8 @@ import { PatrolPlanModule } from './patrol-plan/patrol-plan.module';
         OrganizationModule,
         PoiModule,
         PatrolPlanModule,
+        CrimeModule,
+        CitizenTipModule,
     ],
     providers: [
         // Apply throttler globally

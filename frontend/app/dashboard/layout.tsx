@@ -19,6 +19,8 @@ import {
     ChevronRight,
     MapPin,
     ClipboardList,
+    Flame,
+    MessageCircle,
 } from 'lucide-react';
 
 import NotificationBell from '@/components/NotificationBell';
@@ -54,6 +56,8 @@ export default function DashboardLayout({
         // { name: 'แผนที่ยุทธวิธี', href: '/dashboard/map', icon: Map }, // Hidden - merged into Dashboard
         { name: 'สถานที่สำคัญ', href: '/dashboard/poi', icon: MapPin },
         { name: 'แผนการตรวจ', href: '/dashboard/patrol-plans', icon: ClipboardList },
+        { name: 'Crime Map', href: '/dashboard/crimes', icon: Flame },
+        { name: 'เบาะแส', href: '/dashboard/tips', icon: MessageCircle },
         { name: 'พื้นที่เสี่ยง', href: '/dashboard/riskzones', icon: AlertTriangle },
         { name: 'รายงานเหตุการณ์', href: '/dashboard/incidents', icon: FileText },
         { name: 'ผู้ใช้งาน', href: '/dashboard/users', icon: User },

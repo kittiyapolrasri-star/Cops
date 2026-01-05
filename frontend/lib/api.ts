@@ -182,3 +182,44 @@ export const patrolPlanApi = {
     markLeft: (completionId: string) =>
         api.patch(`/patrol-plans/completions/${completionId}/leave`),
 };
+
+// ==================== CRIME API (Layer 3) ====================
+export const crimeApi = {
+    getAll: (params?: { stationId?: string; type?: string; source?: string; fromDate?: string; toDate?: string; isResolved?: boolean }) =>
+        api.get('/crimes', { params }),
+    getById: (id: string) => api.get(`/crimes/${id}`),
+    create: (data: any) => api.post('/crimes', data),
+    update: (id: string, data: any) => api.patch(`/crimes/${id}`, data),
+    delete: (id: string) => api.delete(`/crimes/${id}`),
+    resolve: (id: string) => api.patch(`/crimes/${id}/resolve`),
+    bulkCreate: (records: any[]) => api.post('/crimes/bulk', records),
+
+    // Heat Map & Cluster Data
+    getHeatmap: (params?: { stationId?: string; type?: string; months?: number }) =>
+        api.get('/crimes/heatmap', { params }),
+    getClusters: (params?: { stationId?: string; type?: string; months?: number }) =>
+        api.get('/crimes/clusters', { params }),
+    getStats: (stationId?: string, months?: number) =>
+        api.get('/crimes/stats', { params: { stationId, months } }),
+};
+
+// ==================== CITIZEN TIP API (Layer 7) ====================
+export const citizenTipApi = {
+    // Public endpoints (no auth)
+    submit: (data: { category: string; description: string; latitude?: number; longitude?: number; address?: string; photos?: string[]; contactPhone?: string; isAnonymous?: boolean }) =>
+        api.post('/tips/submit', data),
+    track: (tipCode: string) => api.get(`/tips/track/${tipCode}`),
+
+    // Admin endpoints (with auth)
+    getAll: (params?: { stationId?: string; status?: string; category?: string; priority?: number }) =>
+        api.get('/tips', { params }),
+    getById: (id: string) => api.get(`/tips/${id}`),
+    update: (id: string, data: any) => api.patch(`/tips/${id}`, data),
+    updateStatus: (id: string, status: string, actionNote?: string) =>
+        api.patch(`/tips/${id}/status`, { status, actionNote }),
+    assign: (id: string, userId: string) =>
+        api.patch(`/tips/${id}/assign`, { userId }),
+    delete: (id: string) => api.delete(`/tips/${id}`),
+    getStats: (stationId?: string) =>
+        api.get('/tips/stats', { params: { stationId } }),
+};
