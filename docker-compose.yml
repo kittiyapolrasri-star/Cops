@@ -52,7 +52,17 @@ services:
       postgres:
         condition: service_healthy
     command: >
-      sh -c "npx prisma migrate deploy && npm run start:prod"
+      sh -c "
+        echo 'Waiting for database...' &&
+        for i in 1 2 3 4 5; do
+          if npx prisma migrate deploy; then
+            echo 'Migration successful!';
+            break;
+          fi;
+          echo 'Migration failed, retrying in 5s...' && sleep 5;
+        done &&
+        npm run start:prod
+      "
 
   # Next.js Frontend
   frontend:
