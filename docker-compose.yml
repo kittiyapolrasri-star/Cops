@@ -45,7 +45,7 @@ services:
       NODE_ENV: production
       UPLOAD_DIR: /app/uploads
     ports:
-      - "4000:4000"
+      - "4005:4000"
     volumes:
       - uploads_data:/app/uploads
     depends_on:

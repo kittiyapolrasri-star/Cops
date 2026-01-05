@@ -2,7 +2,7 @@ import { io } from 'socket.io-client';
 import Cookies from 'js-cookie';
 
 // Use environment variable or fallback to backend URL
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4005';
 
 // Create socket with auth token
 const createSocket = () => {
