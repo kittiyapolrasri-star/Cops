@@ -74,7 +74,7 @@ export default function DashboardPage() {
     }, []);
 
     return (
-        <div className="h-[calc(100vh-64px)] w-full relative overflow-hidden bg-[#050505]">
+        <div className="h-screen w-full relative overflow-hidden bg-[#050505]">
             {/* ===== FULL-SCREEN MAP (God's Eye View) ===== */}
             <div className="absolute inset-0">
                 <DashboardMap />
