@@ -8,7 +8,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: cops_password_secure
       POSTGRES_DB: cops_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -38,7 +38,7 @@ services:
     container_name: cops-backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cops_db?schema=public
+      DATABASE_URL: postgresql://postgres:cops_password_secure@postgres:5432/cops_db?schema=public
       JWT_SECRET: cops-super-secret-jwt-key-2024-production
       JWT_EXPIRES_IN: 7d
       PORT: 4000
