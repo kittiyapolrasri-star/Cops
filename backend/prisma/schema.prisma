@@ -79,6 +79,8 @@ model Station {
   province    Province    @relation(fields: [provinceId], references: [id])
   users       User[]
   riskZones   RiskZone[]
+  pois        PointOfInterest[]  // Layer 2: สถานที่สำคัญ
+  patrolPlans PatrolPlan[]       // Layer 4: แผนการตรวจ
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
@@ -102,6 +104,11 @@ model User {
   patrolRoutes  PatrolRoute[]
   checkIns      CheckIn[]
   incidents     Incident[]
+  // Layer 2 & 4 relations
+  createdPOIs           PointOfInterest[]      @relation("POICreator")
+  createdPatrolPlans    PatrolPlan[]           @relation("PatrolPlanCreator")
+  patrolAssignments     PatrolAssignment[]
+  checkpointCompletions CheckpointCompletion[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -112,12 +119,17 @@ model PatrolRoute {
   id          String          @id @default(uuid())
   userId      String
   user        User            @relation(fields: [userId], references: [id])
+  planId      String?         // เชื่อมกับแผนการตรวจ (Layer 4)
+  plan        PatrolPlan?     @relation(fields: [planId], references: [id])
   startedAt   DateTime        @default(now())
   endedAt     DateTime?
   isActive    Boolean         @default(true)
+  complianceRate Float?       // % ที่ทำตามแผน (Layer 5)
   locations   PatrolLocation[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+
+  @@index([planId, startedAt])
 }
 
 model PatrolLocation {
@@ -223,5 +235,141 @@ model Notification {
   @@index([userId, isRead, createdAt(sort: Desc)])
   @@index([stationId, isRead, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
+}
+
+// ==================== POINTS OF INTEREST (Layer 2) ====================
+
+enum POICategory {
+  BANK              // ธนาคาร
+  GOLD_SHOP         // ร้านทอง
+  VIP_RESIDENCE     // บ้าน VIP
+  ATM               // ตู้ ATM
+  CONVENIENCE_STORE // ร้านสะดวกซื้อ
+  GAS_STATION       // ปั๊มน้ำมัน
+  SCHOOL            // โรงเรียน
+  HOSPITAL          // โรงพยาบาล
+  TEMPLE            // วัด
+  MARKET            // ตลาด
+  MALL              // ห้างสรรพสินค้า
+  OTHER             // อื่นๆ
+}
+
+enum POIPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model PointOfInterest {
+  id            String      @id @default(uuid())
+  name          String
+  category      POICategory
+  priority      POIPriority @default(MEDIUM)
+  latitude      Float
+  longitude     Float
+  address       String?
+  description   String?
+  photos        String[]
+  contactName   String?
+  contactPhone  String?
+  openHours     String?     // เช่น "08:00-17:00"
+  stationId     String
+  station       Station     @relation(fields: [stationId], references: [id])
+  createdById   String
+  createdBy     User        @relation("POICreator", fields: [createdById], references: [id])
+  checkpoints   PatrolCheckpoint[]
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([stationId, category])
+  @@index([category, isActive])
+  @@index([latitude, longitude])
+}
+
+// ==================== PATROL PLANS (Layer 4) ====================
+
+enum AssignmentStatus {
+  PENDING       // รอดำเนินการ
+  IN_PROGRESS   // กำลังดำเนินการ
+  COMPLETED     // เสร็จสิ้น
+  MISSED        // ไม่ได้ทำ
+}
+
+model PatrolPlan {
+  id            String          @id @default(uuid())
+  name          String
+  description   String?
+  stationId     String
+  station       Station         @relation(fields: [stationId], references: [id])
+  createdById   String
+  createdBy     User            @relation("PatrolPlanCreator", fields: [createdById], references: [id])
+  startTime     DateTime        // เวลาเริ่มต้น
+  endTime       DateTime        // เวลาสิ้นสุด
+  repeatDaily   Boolean         @default(false)
+  checkpoints   PatrolCheckpoint[]
+  assignments   PatrolAssignment[]
+  routes        PatrolRoute[]   // เชื่อมกับ routes ที่ใช้แผนนี้
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@index([stationId, isActive])
+  @@index([startTime, endTime])
+}
+
+model PatrolCheckpoint {
+  id            String      @id @default(uuid())
+  planId        String
+  plan          PatrolPlan  @relation(fields: [planId], references: [id], onDelete: Cascade)
+  name          String
+  latitude      Float
+  longitude     Float
+  radius        Float       @default(50)  // รัศมีที่ถือว่าถึงจุด (เมตร)
+  sequence      Int         // ลำดับการตรวจ
+  expectedTime  DateTime?   // เวลาที่คาดว่าจะถึง
+  stayDuration  Int?        // เวลาที่ควรอยู่ (นาที)
+  poiId         String?     // เชื่อมกับ POI ถ้ามี
+  poi           PointOfInterest? @relation(fields: [poiId], references: [id])
+  completions   CheckpointCompletion[]
+  createdAt     DateTime    @default(now())
+
+  @@index([planId, sequence])
+}
+
+model PatrolAssignment {
+  id            String           @id @default(uuid())
+  planId        String
+  plan          PatrolPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User             @relation(fields: [userId], references: [id])
+  assignedAt    DateTime         @default(now())
+  scheduledDate DateTime         // วันที่ต้องทำ
+  status        AssignmentStatus @default(PENDING)
+  completedAt   DateTime?
+  notes         String?
+
+  @@index([userId, scheduledDate])
+  @@index([planId, scheduledDate])
+  @@index([status, scheduledDate])
+}
+
+model CheckpointCompletion {
+  id            String           @id @default(uuid())
+  checkpointId  String
+  checkpoint    PatrolCheckpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User             @relation(fields: [userId], references: [id])
+  arrivedAt     DateTime
+  leftAt        DateTime?
+  latitude      Float
+  longitude     Float
+  photo         String?
+  note          String?
+  createdAt     DateTime         @default(now())
+
+  @@index([checkpointId, arrivedAt])
+  @@index([userId, arrivedAt])
 }
 

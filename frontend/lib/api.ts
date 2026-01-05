@@ -129,3 +129,56 @@ export const userApi = {
     update: (id: string, data: any) => api.patch(`/users/${id}`, data),
     delete: (id: string) => api.delete(`/users/${id}`),
 };
+
+// ==================== POI API (Layer 2) ====================
+export const poiApi = {
+    getAll: (params?: { stationId?: string; category?: string; priority?: string }) =>
+        api.get('/poi', { params }),
+    getById: (id: string) => api.get(`/poi/${id}`),
+    create: (data: any) => api.post('/poi', data),
+    update: (id: string, data: any) => api.patch(`/poi/${id}`, data),
+    delete: (id: string) => api.delete(`/poi/${id}`),
+    getNearby: (lat: number, lng: number, radius?: number, category?: string) =>
+        api.get('/poi/nearby', { params: { lat, lng, radius, category } }),
+    getStats: (stationId?: string) =>
+        api.get('/poi/stats', { params: { stationId } }),
+};
+
+// ==================== PATROL PLAN API (Layer 4) ====================
+export const patrolPlanApi = {
+    // Plans
+    getAll: (params?: { stationId?: string; isActive?: boolean; fromDate?: string; toDate?: string }) =>
+        api.get('/patrol-plans', { params }),
+    getById: (id: string) => api.get(`/patrol-plans/${id}`),
+    create: (data: any) => api.post('/patrol-plans', data),
+    update: (id: string, data: any) => api.patch(`/patrol-plans/${id}`, data),
+    delete: (id: string) => api.delete(`/patrol-plans/${id}`),
+    getStats: (stationId?: string) =>
+        api.get('/patrol-plans/stats', { params: { stationId } }),
+    getProgress: (id: string, date?: string) =>
+        api.get(`/patrol-plans/${id}/progress`, { params: { date } }),
+
+    // Checkpoints
+    addCheckpoint: (planId: string, data: any) =>
+        api.post(`/patrol-plans/${planId}/checkpoints`, data),
+    updateCheckpoint: (checkpointId: string, data: any) =>
+        api.patch(`/patrol-plans/checkpoints/${checkpointId}`, data),
+    deleteCheckpoint: (checkpointId: string) =>
+        api.delete(`/patrol-plans/checkpoints/${checkpointId}`),
+    reorderCheckpoints: (planId: string, checkpointIds: string[]) =>
+        api.post(`/patrol-plans/${planId}/checkpoints/reorder`, { checkpointIds }),
+
+    // Assignments
+    assign: (planId: string, userId: string, scheduledDate: string) =>
+        api.post(`/patrol-plans/${planId}/assign`, { userId, scheduledDate }),
+    updateAssignmentStatus: (assignmentId: string, status: string) =>
+        api.patch(`/patrol-plans/assignments/${assignmentId}/status`, { status }),
+    getMyAssignments: (date?: string) =>
+        api.get('/patrol-plans/my-assignments', { params: { date } }),
+
+    // Checkpoint Completion
+    recordVisit: (checkpointId: string, data: { latitude: number; longitude: number; photo?: string; note?: string }) =>
+        api.post(`/patrol-plans/checkpoints/${checkpointId}/visit`, data),
+    markLeft: (completionId: string) =>
+        api.patch(`/patrol-plans/completions/${completionId}/leave`),
+};

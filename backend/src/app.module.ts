@@ -12,6 +12,8 @@ import { RiskzoneModule } from './riskzone/riskzone.module';
 import { UploadModule } from './upload/upload.module';
 import { NotificationModule } from './notification/notification.module';
 import { OrganizationModule } from './organization/organization.module';
+import { PoiModule } from './poi/poi.module';
+import { PatrolPlanModule } from './patrol-plan/patrol-plan.module';
 
 @Module({
     imports: [
@@ -33,6 +35,8 @@ import { OrganizationModule } from './organization/organization.module';
         UploadModule,
         NotificationModule,
         OrganizationModule,
+        PoiModule,
+        PatrolPlanModule,
     ],
     providers: [
         // Apply throttler globally
