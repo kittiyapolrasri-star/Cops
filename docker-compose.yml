@@ -55,7 +55,7 @@ services:
       sh -c "
         echo 'Waiting for database...' &&
         for i in 1 2 3 4 5; do
-          if npx prisma migrate deploy; then
+          if npx prisma db push; then
             echo 'Migration successful!';
             break;
           fi;
