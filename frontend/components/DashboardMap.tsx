@@ -731,7 +731,7 @@ export default function DashboardMap() {
 
             {/* ===== PROVINCE INFO PANEL ===== */}
             {provinceInfo && (
-                <div className="absolute top-28 left-4 z-[400] bg-black/90 backdrop-blur-md border border-emerald-500/50 rounded-xl p-3 shadow-2xl">
+                <div className="absolute top-36 left-4 z-[400] bg-black/90 backdrop-blur-md border border-emerald-500/50 rounded-xl p-3 shadow-2xl">
                     <div className="flex items-center gap-2 mb-2">
                         <MapPin className="w-4 h-4 text-emerald-400" />
                         <h3 className="font-bold text-white text-sm">{provinceInfo.name}</h3>
@@ -754,7 +754,7 @@ export default function DashboardMap() {
             )}
 
             {/* ===== FLOATING CONTROLS (Right Side) ===== */}
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-[500] flex flex-col gap-2">
+            <div className="absolute right-[200px] top-1/2 -translate-y-1/2 z-[450] flex flex-col gap-2">
                 {/* My Location Button */}
                 <button
                     onClick={getUserLocation}
@@ -788,7 +788,7 @@ export default function DashboardMap() {
             </div>
 
             {/* ===== RADIUS FILTER (Bottom Center) ===== */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] bg-gray-900/95 backdrop-blur-md rounded-full px-4 py-2 border border-gray-700 flex items-center gap-3">
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-[450] bg-gray-900/95 backdrop-blur-md rounded-full px-4 py-2 border border-gray-700 flex items-center gap-3">
                 <span className="text-xs text-gray-400">รัศมี:</span>
                 <select
                     value={searchRadius}
