@@ -144,25 +144,25 @@ export default function LoginPage() {
                 {/* SSO / Demo Buttons */}
                 <div className="space-y-3 opacity-50 hover:opacity-100 transition-opacity duration-500">
                     <button
-                        onClick={() => { setUsername('admin'); setPassword('1234'); }}
+                        onClick={() => { setUsername('admin'); setPassword('password123'); }}
                         className="w-full py-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl text-white/50 hover:text-white transition text-xs font-medium uppercase tracking-wider flex items-center justify-center gap-2 group hover:border-amber-500/30"
                     >
                         <span className="w-1.5 h-1.5 rounded-full bg-white/20 group-hover:bg-amber-400 transition-colors shadow-lg shadow-amber-500/50"></span>
-                        Status: Command
+                        Admin (HQ)
                     </button>
 
                     <div className="grid grid-cols-2 gap-3">
                         <button
-                            onClick={() => { setUsername('commander'); setPassword('1234'); }}
+                            onClick={() => { setUsername('cmd_thonglor'); setPassword('password123'); }}
                             className="w-full py-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl text-white/50 hover:text-white transition text-[10px] font-medium uppercase tracking-wider hover:border-white/20"
                         >
-                            HQ Operations
+                            ผกก.สน.ทองหล่อ
                         </button>
                         <button
-                            onClick={() => { setUsername('patrol1'); setPassword('1234'); }}
+                            onClick={() => { setUsername('patrol_tl01'); setPassword('password123'); }}
                             className="w-full py-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl text-white/50 hover:text-white transition text-[10px] font-medium uppercase tracking-wider hover:border-white/20"
                         >
-                            Field Unit
+                            สายตรวจทองหล่อ
                         </button>
                     </div>
                 </div>
