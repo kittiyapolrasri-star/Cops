@@ -715,16 +715,25 @@ export default function DashboardMap() {
                         position={[poi.latitude, poi.longitude]}
                         icon={L.divIcon({
                             className: 'custom-marker',
-                            html: `<div style="background: #8b5cf6; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">📍</div>`,
+                            html: `<div style="background: #8b5cf6; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3); cursor: pointer;">📍</div>`,
                             iconSize: [28, 28],
                             iconAnchor: [14, 14],
                         })}
+                        eventHandlers={{
+                            click: () => openDetailPanel(poi, 'poi'),
+                        }}
                     >
                         <Popup>
-                            <div className="bg-gray-900 text-white p-2 rounded">
+                            <div className="bg-gray-900 text-white p-3 rounded min-w-[200px]">
                                 <p className="font-bold text-sm">{poi.name}</p>
                                 <p className="text-xs text-purple-400">{poi.category}</p>
-                                <p className="text-xs text-gray-400">{poi.address}</p>
+                                <p className="text-xs text-gray-400 mt-1">{poi.address}</p>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); openDetailPanel(poi, 'poi'); }}
+                                    className="mt-2 w-full bg-purple-600 hover:bg-purple-500 text-white text-xs py-1.5 rounded transition-colors"
+                                >
+                                    ดูรายละเอียด
+                                </button>
                             </div>
                         </Popup>
                     </Marker>
@@ -742,14 +751,23 @@ export default function DashboardMap() {
                             fillOpacity: 0.4,
                             weight: 1,
                         }}
+                        eventHandlers={{
+                            click: () => openDetailPanel(crime, 'crime'),
+                        }}
                     >
                         <Popup>
-                            <div className="bg-gray-900 text-white p-2 rounded">
-                                <p className="font-bold text-sm">{crime.type}</p>
-                                <p className="text-xs text-gray-400">{crime.address}</p>
-                                <p className="text-xs text-orange-400">
+                            <div className="bg-gray-900 text-white p-3 rounded min-w-[200px]">
+                                <p className="font-bold text-sm">🔶 {crime.type}</p>
+                                <p className="text-xs text-gray-400 mt-1">{crime.address}</p>
+                                <p className="text-xs text-orange-400 mt-1">
                                     {new Date(crime.occurredAt).toLocaleDateString('th-TH')}
                                 </p>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); openDetailPanel(crime, 'crime'); }}
+                                    className="mt-2 w-full bg-orange-600 hover:bg-orange-500 text-white text-xs py-1.5 rounded transition-colors"
+                                >
+                                    ดูรายละเอียดคดี
+                                </button>
                             </div>
                         </Popup>
                     </Circle>
@@ -763,7 +781,7 @@ export default function DashboardMap() {
                         icon={L.divIcon({
                             className: 'sos-marker',
                             html: `
-                                <div style="position: relative;">
+                                <div style="position: relative; cursor: pointer;">
                                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(239,68,68,0.3); border-radius: 50%; animation: sos-pulse 1.5s ease-out infinite;"></div>
                                     <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 28px; height: 28px; background: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 3px solid white; box-shadow: 0 0 15px rgba(239,68,68,0.7);">
                                         <span style="color: white; font-weight: bold; font-size: 12px;">SOS</span>
@@ -774,13 +792,22 @@ export default function DashboardMap() {
                             iconAnchor: [20, 20],
                         })}
                         zIndexOffset={1000}
+                        eventHandlers={{
+                            click: () => openDetailPanel(sos, 'sos'),
+                        }}
                     >
                         <Popup>
-                            <div className="bg-gray-900 text-white p-2 rounded">
+                            <div className="bg-gray-900 text-white p-3 rounded min-w-[220px]">
                                 <p className="font-bold text-sm text-red-400">🚨 SOS Alert</p>
-                                <p className="text-xs text-white">{sos.user?.firstName} {sos.user?.lastName}</p>
+                                <p className="text-xs text-white mt-1">{sos.user?.firstName} {sos.user?.lastName}</p>
                                 <p className="text-xs text-gray-400">{sos.type}</p>
-                                <p className="text-xs text-gray-400">{sos.message}</p>
+                                {sos.message && <p className="text-xs text-gray-400 mt-1">{sos.message}</p>}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); openDetailPanel(sos, 'sos'); }}
+                                    className="mt-2 w-full bg-red-600 hover:bg-red-500 text-white text-xs py-1.5 rounded transition-colors"
+                                >
+                                    ดูรายละเอียดฉุกเฉิน
+                                </button>
                             </div>
                         </Popup>
                     </Marker>
