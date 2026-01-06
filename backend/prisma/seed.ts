@@ -8,36 +8,64 @@ const prisma = new PrismaClient();
 async function main() {
     console.log('🌱 Starting seed...');
 
-    // 1. Seed Organizations
+    // 1. Seed Organizations (Iterative Upsert for Robustness)
     const orgData = JSON.parse(
         fs.readFileSync(path.join(__dirname, 'seed-data/organizations.json'), 'utf-8'),
     );
 
     for (const bureau of orgData) {
-        const createdBureau = await prisma.bureau.upsert({
+        // Upsert Bureau
+        const bureauRecord = await prisma.bureau.upsert({
             where: { code: bureau.code },
-            update: {},
+            update: { name: bureau.name },
             create: {
                 code: bureau.code,
                 name: bureau.name,
-                provinces: {
-                    create: bureau.provinces.map((province: any) => ({
+            },
+        });
+        console.log(`Verified Bureau: ${bureauRecord.name}`);
+
+        if (bureau.provinces) {
+            for (const province of bureau.provinces) {
+                // Upsert Province
+                const provinceRecord = await prisma.province.upsert({
+                    where: { code: province.code },
+                    update: {
+                        name: province.name,
+                        bureauId: bureauRecord.id
+                    },
+                    create: {
                         code: province.code,
                         name: province.name,
-                        stations: {
-                            create: province.stations.map((station: any) => ({
+                        bureauId: bureauRecord.id,
+                    },
+                });
+
+                if (province.stations) {
+                    for (const station of province.stations) {
+                        // Upsert Station
+                        await prisma.station.upsert({
+                            where: { code: station.code },
+                            update: {
+                                name: station.name,
+                                address: station.address,
+                                latitude: station.latitude,
+                                longitude: station.longitude,
+                                provinceId: provinceRecord.id
+                            },
+                            create: {
                                 code: station.code,
                                 name: station.name,
                                 address: station.address,
                                 latitude: station.latitude,
                                 longitude: station.longitude,
-                            })),
-                        },
-                    })),
-                },
-            },
-        });
-        console.log(`Created Bureau: ${createdBureau.name}`);
+                                provinceId: provinceRecord.id,
+                            },
+                        });
+                    }
+                }
+            }
+        }
     }
 
     // 2. Seed Users
@@ -61,6 +89,11 @@ async function main() {
             update: {
                 password: hashedPassword,
                 stationId: stationId,
+                role: user.role, // Always update role/details to match seed
+                firstName: user.firstName,
+                lastName: user.lastName,
+                rank: user.rank,
+                position: user.position,
             },
             create: {
                 username: user.username,
@@ -73,7 +106,7 @@ async function main() {
                 stationId: stationId,
             },
         });
-        console.log(`Created User: ${createdUser.username}`);
+        console.log(`Created/Updated User: ${createdUser.username}`);
     }
 
     // 3. Seed POIs
@@ -93,21 +126,37 @@ async function main() {
             });
 
             if (creator) {
-                await prisma.pointOfInterest.create({
-                    data: {
-                        name: poi.name,
-                        description: poi.description,
-                        category: poi.category,
-                        priority: poi.priority,
-                        latitude: poi.latitude,
-                        longitude: poi.longitude,
-                        address: poi.address,
+                // Check if POI exists by name + station to prevent duplicates if running seed checks?
+                // POI doesn't have a unique code in JSON usually, but let's check.
+                // For now, we use create because POI doesn't have a unique key in the seed data besides generated ID.
+                // But to avoid flooding, we could check findFirst.
 
-                        stationId: station.id,
-                        createdById: creator.id,
-                    },
+                const existing = await prisma.pointOfInterest.findFirst({
+                    where: {
+                        name: poi.name,
+                        stationId: station.id
+                    }
                 });
-                console.log(`Created POI: ${poi.name}`);
+
+                if (!existing) {
+                    await prisma.pointOfInterest.create({
+                        data: {
+                            name: poi.name,
+                            description: poi.description,
+                            category: poi.category,
+                            priority: poi.priority,
+                            latitude: poi.latitude,
+                            longitude: poi.longitude,
+                            address: poi.address,
+                            // contactInfo removed as per schema
+                            stationId: station.id,
+                            createdById: creator.id,
+                        },
+                    });
+                    console.log(`Created POI: ${poi.name}`);
+                } else {
+                    console.log(`POI already exists: ${poi.name}`);
+                }
             }
         }
     }
