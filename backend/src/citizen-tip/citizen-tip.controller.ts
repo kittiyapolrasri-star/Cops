@@ -15,7 +15,7 @@ import { UpdateTipDto } from './dto/update-tip.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TipStatus, TipCategory } from '@prisma/client';
 
-@Controller('api/tips')
+@Controller('tips')
 export class CitizenTipController {
     constructor(private readonly tipService: CitizenTipService) { }
 

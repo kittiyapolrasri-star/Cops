@@ -17,7 +17,7 @@ import { CreateCheckpointDto } from './dto/create-checkpoint.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AssignmentStatus } from '@prisma/client';
 
-@Controller('api/patrol-plans')
+@Controller('patrol-plans')
 @UseGuards(JwtAuthGuard)
 export class PatrolPlanController {
     constructor(private readonly patrolPlanService: PatrolPlanService) { }

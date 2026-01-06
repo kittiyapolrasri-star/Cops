@@ -16,7 +16,7 @@ import { UpdatePoiDto } from './dto/update-poi.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { POICategory, POIPriority } from '@prisma/client';
 
-@Controller('api/poi')
+@Controller('poi')
 @UseGuards(JwtAuthGuard)
 export class PoiController {
     constructor(private readonly poiService: PoiService) { }

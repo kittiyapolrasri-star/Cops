@@ -16,7 +16,7 @@ import { UpdateCrimeDto } from './dto/update-crime.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CrimeType, CrimeSource } from '@prisma/client';
 
-@Controller('api/crimes')
+@Controller('crimes')
 @UseGuards(JwtAuthGuard)
 export class CrimeController {
     constructor(private readonly crimeService: CrimeService) { }

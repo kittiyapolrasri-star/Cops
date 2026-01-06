@@ -14,7 +14,7 @@ import { CreateSOSDto } from './dto/create-sos.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SOSStatus, SOSType } from '@prisma/client';
 
-@Controller('api/sos')
+@Controller('sos')
 @UseGuards(JwtAuthGuard)
 export class SosController {
     constructor(private readonly sosService: SosService) { }

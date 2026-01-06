@@ -14,7 +14,7 @@ import { GpsComplianceService } from './gps-compliance.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ComplianceStatus } from '@prisma/client';
 
-@Controller('api/gps-compliance')
+@Controller('gps-compliance')
 @UseGuards(JwtAuthGuard)
 export class GpsComplianceController {
     constructor(private readonly gpsService: GpsComplianceService) { }
