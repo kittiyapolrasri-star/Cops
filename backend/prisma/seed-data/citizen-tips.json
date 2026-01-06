@@ -68,7 +68,7 @@
         "status": "ACTIONABLE"
     },
     {
-        "category": "SUSPICIOUS_VEHICLE",
+        "category": "SUSPICIOUS_PERSON",
         "latitude": 13.7220,
         "longitude": 100.5268,
         "address": "หน้าอาคารสาทร",
