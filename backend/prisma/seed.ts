@@ -14,53 +14,27 @@ async function main() {
     );
 
     for (const bureau of orgData) {
-        // Upsert Bureau
         const bureauRecord = await prisma.bureau.upsert({
             where: { code: bureau.code },
             update: { name: bureau.name },
-            create: {
-                code: bureau.code,
-                name: bureau.name,
-            },
+            create: { code: bureau.code, name: bureau.name },
         });
-        console.log(`Verified Bureau: ${bureauRecord.name}`);
+        console.log(`✓ Bureau: ${bureauRecord.name}`);
 
         if (bureau.provinces) {
             for (const province of bureau.provinces) {
-                // Upsert Province
                 const provinceRecord = await prisma.province.upsert({
                     where: { code: province.code },
-                    update: {
-                        name: province.name,
-                        bureauId: bureauRecord.id
-                    },
-                    create: {
-                        code: province.code,
-                        name: province.name,
-                        bureauId: bureauRecord.id,
-                    },
+                    update: { name: province.name, bureauId: bureauRecord.id },
+                    create: { code: province.code, name: province.name, bureauId: bureauRecord.id },
                 });
 
                 if (province.stations) {
                     for (const station of province.stations) {
-                        // Upsert Station
                         await prisma.station.upsert({
                             where: { code: station.code },
-                            update: {
-                                name: station.name,
-                                address: station.address,
-                                latitude: station.latitude,
-                                longitude: station.longitude,
-                                provinceId: provinceRecord.id
-                            },
-                            create: {
-                                code: station.code,
-                                name: station.name,
-                                address: station.address,
-                                latitude: station.latitude,
-                                longitude: station.longitude,
-                                provinceId: provinceRecord.id,
-                            },
+                            update: { name: station.name, address: station.address, latitude: station.latitude, longitude: station.longitude, provinceId: provinceRecord.id },
+                            create: { code: station.code, name: station.name, address: station.address, latitude: station.latitude, longitude: station.longitude, provinceId: provinceRecord.id },
                         });
                     }
                 }
@@ -75,38 +49,18 @@ async function main() {
 
     for (const user of userData) {
         const hashedPassword = await bcrypt.hash(user.password, 10);
-
         let stationId = null;
         if (user.stationCode) {
-            const station = await prisma.station.findUnique({
-                where: { code: user.stationCode },
-            });
+            const station = await prisma.station.findUnique({ where: { code: user.stationCode } });
             stationId = station?.id;
         }
 
-        const createdUser = await prisma.user.upsert({
+        await prisma.user.upsert({
             where: { username: user.username },
-            update: {
-                password: hashedPassword,
-                stationId: stationId,
-                role: user.role, // Always update role/details to match seed
-                firstName: user.firstName,
-                lastName: user.lastName,
-                rank: user.rank,
-                position: user.position,
-            },
-            create: {
-                username: user.username,
-                password: hashedPassword,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                role: user.role,
-                rank: user.rank,
-                position: user.position,
-                stationId: stationId,
-            },
+            update: { password: hashedPassword, stationId, role: user.role, firstName: user.firstName, lastName: user.lastName, rank: user.rank, position: user.position },
+            create: { username: user.username, password: hashedPassword, firstName: user.firstName, lastName: user.lastName, role: user.role, rank: user.rank, position: user.position, stationId },
         });
-        console.log(`Created/Updated User: ${createdUser.username}`);
+        console.log(`✓ User: ${user.username}`);
     }
 
     // 3. Seed POIs
@@ -115,48 +69,183 @@ async function main() {
     );
 
     for (const poi of poiData) {
-        const station = await prisma.station.findUnique({
-            where: { code: poi.stationCode },
-        });
+        const station = await prisma.station.findUnique({ where: { code: poi.stationCode } });
+        const creator = await prisma.user.findFirst({ where: { role: 'PATROL' } });
+
+        if (station && creator) {
+            const existing = await prisma.pointOfInterest.findFirst({ where: { name: poi.name, stationId: station.id } });
+            if (!existing) {
+                await prisma.pointOfInterest.create({
+                    data: { name: poi.name, description: poi.description, category: poi.category, priority: poi.priority, latitude: poi.latitude, longitude: poi.longitude, address: poi.address, stationId: station.id, createdById: creator.id },
+                });
+                console.log(`✓ POI: ${poi.name}`);
+            }
+        }
+    }
+
+    // 4. Seed Crime Records
+    const crimeData = JSON.parse(
+        fs.readFileSync(path.join(__dirname, 'seed-data/crimes.json'), 'utf-8'),
+    );
+
+    for (const crime of crimeData) {
+        const station = await prisma.station.findUnique({ where: { code: crime.stationCode } });
+        const reporter = await prisma.user.findFirst({ where: { role: 'PATROL' } });
 
         if (station) {
-            // Get a random patrol user to be the creator
-            const creator = await prisma.user.findFirst({
-                where: { role: 'PATROL' }
-            });
-
-            if (creator) {
-                // Check if POI exists by name + station to prevent duplicates if running seed checks?
-                // POI doesn't have a unique code in JSON usually, but let's check.
-                // For now, we use create because POI doesn't have a unique key in the seed data besides generated ID.
-                // But to avoid flooding, we could check findFirst.
-
-                const existing = await prisma.pointOfInterest.findFirst({
-                    where: {
-                        name: poi.name,
-                        stationId: station.id
-                    }
+            const existing = await prisma.crimeRecord.findFirst({ where: { caseNumber: crime.caseNumber } });
+            if (!existing) {
+                await prisma.crimeRecord.create({
+                    data: {
+                        caseNumber: crime.caseNumber,
+                        type: crime.type,
+                        source: crime.source,
+                        latitude: crime.latitude,
+                        longitude: crime.longitude,
+                        address: crime.address,
+                        description: crime.description,
+                        occurredAt: new Date(crime.occurredAt),
+                        suspectInfo: crime.suspectInfo,
+                        victimCount: crime.victimCount,
+                        damageValue: crime.damageValue,
+                        isResolved: crime.isResolved,
+                        stationId: station.id,
+                        reportedById: reporter?.id,
+                    },
                 });
+                console.log(`✓ Crime: ${crime.caseNumber}`);
+            }
+        }
+    }
 
-                if (!existing) {
-                    await prisma.pointOfInterest.create({
-                        data: {
-                            name: poi.name,
-                            description: poi.description,
-                            category: poi.category,
-                            priority: poi.priority,
-                            latitude: poi.latitude,
-                            longitude: poi.longitude,
-                            address: poi.address,
-                            // contactInfo removed as per schema
-                            stationId: station.id,
-                            createdById: creator.id,
-                        },
-                    });
-                    console.log(`Created POI: ${poi.name}`);
-                } else {
-                    console.log(`POI already exists: ${poi.name}`);
-                }
+    // 5. Seed Risk Zones
+    const riskzoneData = JSON.parse(
+        fs.readFileSync(path.join(__dirname, 'seed-data/riskzones.json'), 'utf-8'),
+    );
+
+    for (const zone of riskzoneData) {
+        const station = await prisma.station.findUnique({ where: { code: zone.stationCode } });
+
+        if (station) {
+            const existing = await prisma.riskZone.findFirst({ where: { name: zone.name, stationId: station.id } });
+            if (!existing) {
+                await prisma.riskZone.create({
+                    data: {
+                        name: zone.name,
+                        description: zone.description,
+                        latitude: zone.latitude,
+                        longitude: zone.longitude,
+                        radius: zone.radius,
+                        riskLevel: zone.riskLevel,
+                        requiredCheckIns: zone.requiredCheckIns,
+                        stationId: station.id,
+                    },
+                });
+                console.log(`✓ RiskZone: ${zone.name}`);
+            }
+        }
+    }
+
+    // 6. Seed Citizen Tips
+    const tipData = JSON.parse(
+        fs.readFileSync(path.join(__dirname, 'seed-data/citizen-tips.json'), 'utf-8'),
+    );
+
+    for (const tip of tipData) {
+        const station = await prisma.station.findUnique({ where: { code: tip.stationCode } });
+
+        if (station) {
+            await prisma.citizenTip.create({
+                data: {
+                    tipCode: `TIP-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+                    category: tip.category,
+                    latitude: tip.latitude,
+                    longitude: tip.longitude,
+                    address: tip.address,
+                    description: tip.description,
+                    contactPhone: tip.contactPhone,
+                    contactEmail: tip.contactEmail,
+                    isAnonymous: tip.isAnonymous,
+                    priority: tip.priority,
+                    status: tip.status,
+                    stationId: station.id,
+                },
+            });
+            console.log(`✓ CitizenTip: ${tip.category}`);
+        }
+    }
+
+    // 7. Seed SOS Alerts
+    const sosData = JSON.parse(
+        fs.readFileSync(path.join(__dirname, 'seed-data/sos-alerts.json'), 'utf-8'),
+    );
+
+    for (const sos of sosData) {
+        const user = await prisma.user.findUnique({ where: { username: sos.userUsername } });
+        const station = await prisma.station.findUnique({ where: { code: sos.stationCode } });
+
+        if (user && station) {
+            await prisma.sOSAlert.create({
+                data: {
+                    type: sos.type,
+                    latitude: sos.latitude,
+                    longitude: sos.longitude,
+                    address: sos.address,
+                    message: sos.message,
+                    status: sos.status,
+                    resolutionNote: sos.resolutionNote,
+                    userId: user.id,
+                    stationId: station.id,
+                },
+            });
+            console.log(`✓ SOS: ${sos.type}`);
+        }
+    }
+
+    // 8. Seed Incidents
+    const incidentData = JSON.parse(
+        fs.readFileSync(path.join(__dirname, 'seed-data/incidents.json'), 'utf-8'),
+    );
+
+    for (const incident of incidentData) {
+        const user = await prisma.user.findUnique({ where: { username: incident.userUsername } });
+
+        if (user) {
+            await prisma.incident.create({
+                data: {
+                    type: incident.type,
+                    title: incident.title,
+                    description: incident.description,
+                    latitude: incident.latitude,
+                    longitude: incident.longitude,
+                    status: incident.status,
+                    reportedById: user.id,
+                },
+            });
+            console.log(`✓ Incident: ${incident.title}`);
+        }
+    }
+
+    // 9. Seed Duty Zones (for GPS Compliance)
+    const dutyZoneData = JSON.parse(
+        fs.readFileSync(path.join(__dirname, 'seed-data/duty-zones.json'), 'utf-8'),
+    );
+
+    for (const zone of dutyZoneData) {
+        const station = await prisma.station.findUnique({ where: { code: zone.stationCode } });
+
+        if (station) {
+            const existing = await prisma.dutyZone.findFirst({ where: { name: zone.name, stationId: station.id } });
+            if (!existing) {
+                await prisma.dutyZone.create({
+                    data: {
+                        name: zone.name,
+                        description: zone.description,
+                        coordinates: zone.coordinates,
+                        stationId: station.id,
+                    },
+                });
+                console.log(`✓ DutyZone: ${zone.name}`);
             }
         }
     }

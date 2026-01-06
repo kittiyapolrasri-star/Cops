@@ -1,0 +1,68 @@
+[
+    {
+        "name": "ซ.ทองหล่อ 13 (จุดเปลี่ยว)",
+        "description": "พื้นที่เปลี่ยวหลังเที่ยงคืน มักเกิดเหตุลักทรัพย์และชิงทรัพย์",
+        "category": "THEFT",
+        "latitude": 13.7445,
+        "longitude": 100.5570,
+        "radius": 100,
+        "riskLevel": "HIGH",
+        "requiredCheckIns": 4,
+        "stationCode": "STL01"
+    },
+    {
+        "name": "หน้าผับ Arena 10",
+        "description": "สถานบันเทิง มักเกิดเหตุทะเลาะวิวาทช่วงดึก",
+        "category": "VIOLENT",
+        "latitude": 13.7438,
+        "longitude": 100.5555,
+        "radius": 80,
+        "riskLevel": "CRITICAL",
+        "requiredCheckIns": 6,
+        "stationCode": "STL01"
+    },
+    {
+        "name": "ลานจอดรถห้างเจ-อเวนิว",
+        "description": "เกิดเหตุทุบกระจกรถบ่อยครั้ง",
+        "category": "THEFT",
+        "latitude": 13.7460,
+        "longitude": 100.5580,
+        "radius": 120,
+        "riskLevel": "MEDIUM",
+        "requiredCheckIns": 3,
+        "stationCode": "STL01"
+    },
+    {
+        "name": "ซ.ทองหล่อ 5 (หลังร้านอาหาร)",
+        "description": "จุดมั่วสุมของกลุ่มเสพยา",
+        "category": "DRUGS",
+        "latitude": 13.7410,
+        "longitude": 100.5530,
+        "radius": 60,
+        "riskLevel": "HIGH",
+        "requiredCheckIns": 5,
+        "stationCode": "STL01"
+    },
+    {
+        "name": "ปากซอยทองหล่อ (ใกล้ BTS)",
+        "description": "จุดที่มักเกิดเหตุล้วงกระเป๋าและวิ่งราวทรัพย์",
+        "category": "THEFT",
+        "latitude": 13.7455,
+        "longitude": 100.5590,
+        "radius": 50,
+        "riskLevel": "MEDIUM",
+        "requiredCheckIns": 4,
+        "stationCode": "STL01"
+    },
+    {
+        "name": "ตลาดนัดกลางคืน",
+        "description": "พื้นที่แออัด เสี่ยงต่อล้วงกระเป๋า",
+        "category": "THEFT",
+        "latitude": 13.7422,
+        "longitude": 100.5545,
+        "radius": 150,
+        "riskLevel": "LOW",
+        "requiredCheckIns": 2,
+        "stationCode": "STL01"
+    }
+]

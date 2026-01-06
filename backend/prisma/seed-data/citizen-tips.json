@@ -1,0 +1,59 @@
+[
+    {
+        "category": "DRUG_ACTIVITY",
+        "latitude": 13.7410,
+        "longitude": 100.5530,
+        "address": "ซ.ทองหล่อ 5 หลังร้านอาหาร",
+        "description": "พบกลุ่มวัยรุ่นมั่วสุมสงสัยเสพยา มีการซื้อขายกันบ่อย ช่วงหลัง 4 ทุ่มเป็นต้นไป",
+        "isAnonymous": true,
+        "priority": 2,
+        "stationCode": "STL01",
+        "status": "VERIFIED"
+    },
+    {
+        "category": "SUSPICIOUS_PERSON",
+        "latitude": 13.7455,
+        "longitude": 100.5590,
+        "address": "ปากซอยทองหล่อ ใกล้ BTS",
+        "description": "มีชายวนเวียนดูกระเป๋าผู้หญิง ดูล็อคเป้าก่อนวิ่งราว",
+        "contactPhone": "081-234-5678",
+        "isAnonymous": false,
+        "priority": 1,
+        "stationCode": "STL01",
+        "status": "INVESTIGATING"
+    },
+    {
+        "category": "NOISE_COMPLAINT",
+        "latitude": 13.7438,
+        "longitude": 100.5555,
+        "address": "ผับ Arena 10",
+        "description": "เสียงเพลงดังเกินไปตอนดึก รบกวนชาวบ้าน",
+        "contactEmail": "resident@email.com",
+        "isAnonymous": false,
+        "priority": 0,
+        "stationCode": "STL01",
+        "status": "PENDING"
+    },
+    {
+        "category": "THEFT_CONCERN",
+        "latitude": 13.7460,
+        "longitude": 100.5580,
+        "address": "ลานจอดรถห้างเจ-อเวนิว",
+        "description": "เห็นกลุ่มชายส่อมองรถยนต์ในลานจอด น่าสงสัย",
+        "isAnonymous": true,
+        "priority": 1,
+        "stationCode": "STL01",
+        "status": "ACTIONABLE"
+    },
+    {
+        "category": "ILLEGAL_GAMBLING",
+        "latitude": 13.7422,
+        "longitude": 100.5545,
+        "address": "หลังตลาดนัดกลางคืน",
+        "description": "มีวงเล่นการพนันหลังตลาด ทุกคืนวันเสาร์",
+        "isAnonymous": true,
+        "priority": 1,
+        "stationCode": "STL01",
+        "status": "INVESTIGATING"
+    }
+]

@@ -1,0 +1,106 @@
+[
+    {
+        "name": "รอบเช้าซอยทองหล่อ",
+        "description": "ตรวจพื้นที่สำคัญช่วงเช้า - ธนาคาร, ร้านทอง, โรงเรียน",
+        "startTime": "06:00",
+        "endTime": "12:00",
+        "repeatDaily": true,
+        "stationCode": "STL01",
+        "checkpoints": [
+            {
+                "name": "ธนาคารกรุงเทพ สาขาทองหล่อ",
+                "latitude": 13.7432,
+                "longitude": 100.5545,
+                "radius": 30,
+                "sequence": 1,
+                "stayDuration": 5,
+                "poiName": "Bangkok Bank - Thonglor"
+            },
+            {
+                "name": "ร้านทองยี่กี",
+                "latitude": 13.7440,
+                "longitude": 100.5552,
+                "radius": 30,
+                "sequence": 2,
+                "stayDuration": 5,
+                "poiName": "YeeKee Gold Shop"
+            },
+            {
+                "name": "โรงเรียนอนุบาลทองหล่อ",
+                "latitude": 13.7450,
+                "longitude": 100.5560,
+                "radius": 50,
+                "sequence": 3,
+                "stayDuration": 10
+            }
+        ]
+    },
+    {
+        "name": "รอบกลางคืนสถานบันเทิง",
+        "description": "ตรวจพื้นที่สถานบันเทิงและจุดเสี่ยงช่วงกลางคืน",
+        "startTime": "22:00",
+        "endTime": "04:00",
+        "repeatDaily": true,
+        "stationCode": "STL01",
+        "checkpoints": [
+            {
+                "name": "หน้าผับ Arena 10",
+                "latitude": 13.7438,
+                "longitude": 100.5555,
+                "radius": 40,
+                "sequence": 1,
+                "stayDuration": 15
+            },
+            {
+                "name": "ซ.ทองหล่อ 13 (จุดเปลี่ยว)",
+                "latitude": 13.7445,
+                "longitude": 100.5570,
+                "radius": 50,
+                "sequence": 2,
+                "stayDuration": 10
+            },
+            {
+                "name": "ลานจอดรถห้างเจ-อเวนิว",
+                "latitude": 13.7460,
+                "longitude": 100.5580,
+                "radius": 60,
+                "sequence": 3,
+                "stayDuration": 10
+            },
+            {
+                "name": "ปากซอยทองหล่อ (BTS)",
+                "latitude": 13.7455,
+                "longitude": 100.5590,
+                "radius": 30,
+                "sequence": 4,
+                "stayDuration": 5
+            }
+        ]
+    },
+    {
+        "name": "จุดตรวจบ่าย ATM/ธนาคาร",
+        "description": "เน้นตรวจตู้ ATM และธนาคารช่วงบ่าย",
+        "startTime": "13:00",
+        "endTime": "18:00",
+        "repeatDaily": false,
+        "stationCode": "STL01",
+        "checkpoints": [
+            {
+                "name": "ตู้ ATM หน้า 7-11 ทองหล่อ 10",
+                "latitude": 13.7430,
+                "longitude": 100.5550,
+                "radius": 20,
+                "sequence": 1,
+                "stayDuration": 5
+            },
+            {
+                "name": "ธนาคารกสิกร สาขาทองหล่อ",
+                "latitude": 13.7435,
+                "longitude": 100.5558,
+                "radius": 30,
+                "sequence": 2,
+                "stayDuration": 5
+            }
+        ]
+    }
+]

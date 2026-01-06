@@ -1,0 +1,44 @@
+[
+    {
+        "type": "EMERGENCY",
+        "latitude": 13.7430,
+        "longitude": 100.5550,
+        "address": "ซอยทองหล่อ 10",
+        "message": "มีเหตุฉุกเฉิน ต้องการความช่วยเหลือ",
+        "userUsername": "patrol1",
+        "stationCode": "STL01",
+        "status": "RESOLVED",
+        "resolutionNote": "ตำรวจเข้าช่วยเหลือแล้ว"
+    },
+    {
+        "type": "NEED_BACKUP",
+        "latitude": 13.7445,
+        "longitude": 100.5570,
+        "address": "ซ.ทองหล่อ 13",
+        "message": "พบกลุ่มผู้ต้องสงสัย ต้องการกำลังเสริม",
+        "userUsername": "patrol2",
+        "stationCode": "STL01",
+        "status": "RESPONDING"
+    },
+    {
+        "type": "UNDER_ATTACK",
+        "latitude": 13.7438,
+        "longitude": 100.5555,
+        "address": "หน้าผับ Arena 10",
+        "message": "ถูกกลุ่มคนรุมทำร้าย!",
+        "userUsername": "patrol1",
+        "stationCode": "STL01",
+        "status": "ACTIVE"
+    },
+    {
+        "type": "VEHICLE_BREAKDOWN",
+        "latitude": 13.7425,
+        "longitude": 100.5540,
+        "address": "แยกทองหล่อ-เพชรบุรี",
+        "message": "รถมอเตอร์ไซค์เสีย ต้องการความช่วยเหลือ",
+        "userUsername": "patrol3",
+        "stationCode": "STL01",
+        "status": "RESOLVED",
+        "resolutionNote": "ส่งช่างมาซ่อมแล้ว"
+    }
+]
