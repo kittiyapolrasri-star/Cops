@@ -154,10 +154,10 @@ export default function OrganizationPage() {
 
                                                     <div className="ml-4 grid gap-2">
                                                         {province.stations?.map((station: any) => (
-                                                            <div key={station.id} className="flex items-center justify-between bg-slate-50 p-2 rounded border">
+                                                            <div key={station.id} className="flex items-center justify-between bg-slate-800/50 p-2 rounded border border-slate-700">
                                                                 <div className="flex items-center gap-2">
-                                                                    <Home className="h-4 w-4 text-orange-600" />
-                                                                    <span className="text-sm">{station.name} ({station.code})</span>
+                                                                    <Home className="h-4 w-4 text-orange-500" />
+                                                                    <span className="text-sm text-white">{station.name} ({station.code})</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                                                     <div className="flex items-center gap-1">
