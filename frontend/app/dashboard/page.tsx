@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '@/lib/store/auth';
-import { checkinApi, incidentApi, riskzoneApi, trackingApi } from '@/lib/api';
+import { checkinApi, incidentApi, riskzoneApi, trackingApi, sosApi, crimeApi } from '@/lib/api';
 import { Activity, Clock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -24,17 +24,22 @@ export default function DashboardPage() {
         checkinsToday: 0,
         incidentsToday: 0,
         riskZones: 0,
+        activeSOS: 0,
+        crimesToday: 0,
+        crimesByType: {} as Record<string, number>,
     });
 
     // Fetch real data
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [activePatrols, incidentsStats, riskZones, checkins] = await Promise.all([
+                const [activePatrols, incidentsStats, riskZones, checkins, activeSOS, crimeStats] = await Promise.all([
                     trackingApi.getActivePatrols(),
                     incidentApi.getStats(),
                     riskzoneApi.getAll(),
-                    checkinApi.getRecent(undefined, 100)
+                    checkinApi.getRecent(undefined, 100),
+                    sosApi.getActive(),
+                    crimeApi.getStats(undefined, 1), // Last 1 month
                 ]);
 
                 const todayCheckins = checkins.data.filter((c: any) => {
@@ -48,6 +53,9 @@ export default function DashboardPage() {
                     checkinsToday: todayCheckins,
                     incidentsToday: incidentsStats.data?.total || 0,
                     riskZones: riskZones.data.length || 0,
+                    activeSOS: activeSOS.data?.length || 0,
+                    crimesToday: crimeStats.data?.total || 0,
+                    crimesByType: crimeStats.data?.byType || {},
                 });
             } catch (error) {
                 console.error("Failed to fetch dashboard stats", error);

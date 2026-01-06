@@ -631,8 +631,8 @@ export default function DashboardMap() {
                 patrols={filteredPatrols}
             />
 
-            {/* ===== LEGEND & LAYER CONTROLS ===== */}
-            <div className="absolute top-4 right-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl max-w-[180px]">
+            {/* ===== LEGEND & LAYER CONTROLS (Hidden on mobile, visible md+) ===== */}
+            <div className="absolute top-4 right-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl max-w-[180px] hidden md:block">
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-bold">Map Layers</p>
 
                 {/* Layer Toggles */}

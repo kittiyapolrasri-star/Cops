@@ -621,3 +621,34 @@ model SOSResponse {
   @@index([alertId, createdAt])
 }
 
+// ==================== AUDIT LOG (Activity Tracking) ====================
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE
+  UPDATE
+  DELETE
+  VIEW
+  EXPORT
+  SOS_TRIGGER
+  SOS_RESPOND
+}
+
+model AuditLog {
+  id          String      @id @default(uuid())
+  action      AuditAction
+  entity      String      // เช่น "CrimeRecord", "PatrolPlan", "SOSAlert"
+  entityId    String?     // ID ของ entity ที่ถูกกระทำ
+  userId      String?
+  userName    String?     // เก็บชื่อเผื่อ user ถูกลบ
+  ipAddress   String?
+  userAgent   String?
+  details     Json?       // ข้อมูลเพิ่มเติม เช่น old/new values
+  createdAt   DateTime    @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@index([entity, entityId])
+  @@index([createdAt(sort: Desc)])
+}

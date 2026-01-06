@@ -18,6 +18,7 @@ import { CrimeModule } from './crime/crime.module';
 import { CitizenTipModule } from './citizen-tip/citizen-tip.module';
 import { SosModule } from './sos/sos.module';
 import { GpsComplianceModule } from './gps-compliance/gps-compliance.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
     imports: [
@@ -45,6 +46,7 @@ import { GpsComplianceModule } from './gps-compliance/gps-compliance.module';
         CitizenTipModule,
         SosModule,
         GpsComplianceModule,
+        AuditModule,
     ],
     providers: [
         // Apply throttler globally

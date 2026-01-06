@@ -292,3 +292,16 @@ export const gpsComplianceApi = {
         api.get('/gps-compliance/stats', { params: { stationId } }),
 };
 
+// ==================== AUDIT LOG API ====================
+export const auditApi = {
+    getRecent: (limit?: number) =>
+        api.get('/audit/recent', { params: { limit } }),
+    getStats: (days?: number) =>
+        api.get('/audit/stats', { params: { days } }),
+    getByUser: (userId: string, limit?: number) =>
+        api.get('/audit/by-user', { params: { userId, limit } }),
+    getByEntity: (entity: string, entityId?: string, limit?: number) =>
+        api.get('/audit/by-entity', { params: { entity, entityId, limit } }),
+    getAll: (params?: { userId?: string; action?: string; entity?: string; fromDate?: string; toDate?: string; limit?: number }) =>
+        api.get('/audit', { params }),
+};
