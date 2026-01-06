@@ -17,6 +17,7 @@ import {
     provinceNameMap,
 } from '@/lib/mapUtils';
 import MapSearchBar from './MapSearchBar';
+import LocationDetailPanel, { DetailItemType } from './LocationDetailPanel';
 import {
     Building2,
     Radio,
@@ -92,6 +93,11 @@ export default function DashboardMap() {
     const [flyTrigger, setFlyTrigger] = useState(0); // Increment to force fly animation
     const [selectedResult, setSelectedResult] = useState<SearchResult | null>(null);
     const [selectedStation, setSelectedStation] = useState<string | null>(null);
+
+    // ===== DETAIL PANEL STATE =====
+    const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+    const [detailItem, setDetailItem] = useState<any>(null);
+    const [detailType, setDetailType] = useState<DetailItemType>('station');
 
     // ===== HIERARCHY FILTERS =====
     const [selectedBureau, setSelectedBureau] = useState<string>('');
@@ -364,6 +370,20 @@ export default function DashboardMap() {
             ...prev,
             [category]: !prev[category as keyof typeof prev],
         }));
+    };
+
+    // Open detail panel
+    const openDetailPanel = (item: any, type: DetailItemType) => {
+        setDetailItem(item);
+        setDetailType(type);
+        setDetailPanelOpen(true);
+    };
+
+    // Handle zoom from detail panel
+    const handleDetailZoom = (lat: number, lng: number) => {
+        setCenter([lat, lng]);
+        setCurrentZoom(16);
+        setFlyTrigger((prev) => prev + 1);
     };
 
     // GeoJSON style function
@@ -806,8 +826,24 @@ export default function DashboardMap() {
                             </p>
                         </div>
                     </div>
+                    {/* Open Full Details Button */}
+                    <button
+                        onClick={() => openDetailPanel({ ...selectedResult.data, patrolCount: patrolCountByStation[selectedStation] || 0 }, 'station')}
+                        className="mt-3 w-full bg-cyan-600 hover:bg-cyan-500 text-white text-xs py-2 rounded-lg transition-colors"
+                    >
+                        ดูรายละเอียดทั้งหมด
+                    </button>
                 </div>
             )}
+
+            {/* ===== LOCATION DETAIL PANEL ===== */}
+            <LocationDetailPanel
+                isOpen={detailPanelOpen}
+                onClose={() => setDetailPanelOpen(false)}
+                item={detailItem}
+                type={detailType}
+                onZoomTo={handleDetailZoom}
+            />
         </div>
     );
 }
