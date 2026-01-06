@@ -1,61 +1,94 @@
 import L from 'leaflet';
 
-// ==================== STATION ICON ====================
+// ==================== STATION ICON (Police Building) ====================
 export const createStationIcon = (
     name: string,
     patrolCount: number,
     isSelected: boolean,
     isDimmed: boolean = false
 ) => {
-    const bgColor = isSelected ? '#10b981' : isDimmed ? '#374151' : '#3b82f6';
-    const borderColor = isSelected ? '#34d399' : isDimmed ? '#4b5563' : '#60a5fa';
+    const bgColor = isSelected ? '#10b981' : isDimmed ? '#374151' : '#1e40af';
+    const borderColor = isSelected ? '#34d399' : isDimmed ? '#4b5563' : '#3b82f6';
     const opacity = isDimmed ? '0.5' : '1';
 
     return new L.DivIcon({
         html: `
             <div class="relative group cursor-pointer" style="opacity: ${opacity};">
-                <div class="w-9 h-9 rounded-lg ${isSelected ? 'scale-110' : ''}" style="background: ${bgColor}; border: 2px solid ${borderColor}; box-shadow: 0 0 15px ${bgColor}40;">
-                    <div class="w-full h-full flex items-center justify-center">
-                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                        </svg>
-                    </div>
-                    ${patrolCount > 0 ? `
-                        <div class="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border border-white shadow-md">
-                            <span class="text-[8px] font-bold text-white">${patrolCount}</span>
-                        </div>
-                    ` : ''}
+                <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, ${bgColor} 0%, #1e3a8a 100%); border: 2px solid ${borderColor}; box-shadow: 0 4px 12px ${bgColor}60;">
+                    <!-- Police Building SVG -->
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="white">
+                        <!-- Building Base -->
+                        <path d="M4 21V9l8-5 8 5v12H4z" fill="white" opacity="0.9"/>
+                        <!-- Roof -->
+                        <path d="M2 9l10-7 10 7" stroke="white" stroke-width="2" fill="none"/>
+                        <!-- Police Shield Emblem -->
+                        <path d="M12 10c-2 0-3 1.5-3 3.5s1.2 3.5 3 4.5c1.8-1 3-2.5 3-4.5s-1-3.5-3-3.5z" fill="${bgColor}" stroke="white" stroke-width="0.5"/>
+                        <!-- Star on shield -->
+                        <polygon points="12,11.5 12.5,13 14,13 12.8,14 13.3,15.5 12,14.5 10.7,15.5 11.2,14 10,13 11.5,13" fill="gold" transform="scale(0.7) translate(5.5, 3)"/>
+                        <!-- Windows -->
+                        <rect x="6" y="14" width="2" height="3" fill="${bgColor}" opacity="0.7"/>
+                        <rect x="16" y="14" width="2" height="3" fill="${bgColor}" opacity="0.7"/>
+                        <!-- Door -->
+                        <rect x="10" y="17" width="4" height="4" fill="${bgColor}" rx="0.5"/>
+                    </svg>
                 </div>
-                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-black/90 px-2 py-0.5 rounded text-[9px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-[1000]">
-                    ${name.replace('สถานีตำรวจภูธร', 'สภ.').replace('สภ.เมือง', 'สภ.')}
+                ${patrolCount > 0 ? `
+                    <div class="absolute -top-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                        <span class="text-[9px] font-bold text-white">${patrolCount}</span>
+                    </div>
+                ` : ''}
+                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-black/95 px-2 py-1 rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-[1000] font-medium">
+                    🏢 ${name.replace('สถานีตำรวจภูธร', 'สภ.').replace('สภ.เมือง', 'สภ.')}
                 </div>
             </div>
         `,
         className: '',
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-        popupAnchor: [0, -22],
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -24],
     });
 };
 
-// ==================== PATROL ICON ====================
+// ==================== PATROL ICON (Police Car) ====================
 export const createPatrolIcon = (rank: string, isActive: boolean) => {
     const color = isActive ? '#00ffff' : '#666666';
+    const glowColor = isActive ? 'rgba(0,255,255,0.5)' : 'transparent';
+
     return new L.DivIcon({
         html: `
             <div class="relative group">
-                <div class="w-8 h-8 bg-black/60 backdrop-blur-md rounded-full border-2 shadow-[0_0_12px_${color}] flex items-center justify-center" style="border-color: ${color};">
-                    <div class="w-2 h-2 rounded-full ${isActive ? 'animate-pulse' : ''}" style="background: ${color}; box-shadow: 0 0 8px ${color};"></div>
+                <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background: radial-gradient(circle, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.95) 100%); border: 2px solid ${color}; box-shadow: 0 0 15px ${glowColor};">
+                    <!-- Police Car SVG -->
+                    <svg class="w-6 h-6" viewBox="0 0 24 24" fill="${color}">
+                        <!-- Siren light -->
+                        ${isActive ? `
+                            <ellipse cx="12" cy="5" rx="2" ry="1.5" fill="#ef4444" class="animate-pulse"/>
+                            <ellipse cx="12" cy="5" rx="3" ry="2" fill="none" stroke="#ef4444" stroke-width="0.5" opacity="0.5"/>
+                        ` : ''}
+                        <!-- Car body -->
+                        <path d="M5 14l2-4h10l2 4v4H5v-4z" fill="${color}" opacity="0.9"/>
+                        <!-- Car roof -->
+                        <path d="M7 10l1.5-3h7l1.5 3H7z" fill="${color}"/>
+                        <!-- Windows -->
+                        <path d="M8 10l1-2h6l1 2H8z" fill="rgba(255,255,255,0.3)"/>
+                        <!-- Wheels -->
+                        <circle cx="7" cy="18" r="2" fill="#333" stroke="${color}" stroke-width="0.5"/>
+                        <circle cx="17" cy="18" r="2" fill="#333" stroke="${color}" stroke-width="0.5"/>
+                        <!-- Headlights -->
+                        <rect x="4" y="14" width="1.5" height="1" fill="#ffff00" rx="0.3"/>
+                        <rect x="18.5" y="14" width="1.5" height="1" fill="#ffff00" rx="0.3"/>
+                    </svg>
                 </div>
-                <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-black/90 px-1.5 py-0.5 rounded text-[8px] font-bold whitespace-nowrap" style="color: ${color};">
-                    ${rank}
+                <div class="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-black/95 px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap" style="color: ${color};">
+                    🚔 ${rank}
                 </div>
+                ${isActive ? '<div class="absolute top-0 right-0 w-2 h-2 bg-green-500 rounded-full animate-ping"></div>' : ''}
             </div>
         `,
         className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        popupAnchor: [0, -20],
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -24],
     });
 };
 
