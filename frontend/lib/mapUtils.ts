@@ -92,16 +92,30 @@ export const createPatrolIcon = (rank: string, isActive: boolean) => {
     });
 };
 
-// ==================== SELECTED LOCATION ICON ====================
+// ==================== SELECTED LOCATION ICON (Pin Marker) ====================
 export const createSelectedIcon = () => {
     return new L.DivIcon({
-        html: `<div class="w-8 h-8 bg-emerald-500 rounded-full border-4 border-white shadow-[0_0_20px_#10b981] flex items-center justify-center animate-bounce">
-            <div class="w-2 h-2 bg-white rounded-full"></div>
-        </div>`,
+        html: `
+            <div class="relative animate-bounce">
+                <!-- Pin Drop Marker -->
+                <svg class="w-10 h-12" viewBox="0 0 24 30" fill="none">
+                    <!-- Drop shadow -->
+                    <ellipse cx="12" cy="28" rx="4" ry="1.5" fill="rgba(0,0,0,0.3)"/>
+                    <!-- Pin body -->
+                    <path d="M12 0C6.5 0 2 4.5 2 10c0 7.5 10 18 10 18s10-10.5 10-18c0-5.5-4.5-10-10-10z" fill="#10b981"/>
+                    <!-- Pin highlight -->
+                    <path d="M12 0C6.5 0 2 4.5 2 10c0 7.5 10 18 10 18" stroke="#34d399" stroke-width="1" fill="none" opacity="0.5"/>
+                    <!-- Inner circle -->
+                    <circle cx="12" cy="10" r="5" fill="white"/>
+                    <!-- Center dot -->
+                    <circle cx="12" cy="10" r="2" fill="#10b981"/>
+                </svg>
+            </div>
+        `,
         className: '',
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -35],
+        iconSize: [40, 48],
+        iconAnchor: [20, 48],
+        popupAnchor: [0, -48],
     });
 };
 
@@ -114,6 +128,122 @@ export const getRiskColor = (level: string): string => {
         case 'LOW': return '#00ffcc';
         default: return '#888888';
     }
+};
+
+// ==================== POI ICON (Point of Interest) ====================
+export const createPOIIcon = (category: string, priority: string = 'NORMAL') => {
+    const categories: Record<string, { color: string; icon: string; emoji: string }> = {
+        SCHOOL: { color: '#3b82f6', icon: 'school', emoji: '🏫' },
+        TEMPLE: { color: '#f59e0b', icon: 'temple', emoji: '🛕' },
+        HOSPITAL: { color: '#22c55e', icon: 'hospital', emoji: '🏥' },
+        BANK: { color: '#8b5cf6', icon: 'bank', emoji: '🏦' },
+        MARKET: { color: '#ec4899', icon: 'market', emoji: '🏪' },
+        GAS_STATION: { color: '#ef4444', icon: 'gas', emoji: '⛽' },
+        GOVERNMENT: { color: '#1e40af', icon: 'gov', emoji: '🏛️' },
+        ENTERTAINMENT: { color: '#a855f7', icon: 'ent', emoji: '🎭' },
+        OTHER: { color: '#6b7280', icon: 'other', emoji: '📍' },
+    };
+
+    const cat = categories[category] || categories.OTHER;
+    const priorityBorder = priority === 'HIGH' ? '#ef4444' : priority === 'URGENT' ? '#f97316' : cat.color;
+
+    return new L.DivIcon({
+        html: `
+            <div class="relative group cursor-pointer">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg" style="background: ${cat.color}; border: 2px solid ${priorityBorder};">
+                    <span class="text-sm">${cat.emoji}</span>
+                </div>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-black/95 px-2 py-0.5 rounded text-[9px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-[1000]">
+                    ${cat.emoji} POI
+                </div>
+            </div>
+        `,
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -20],
+    });
+};
+
+// ==================== CRIME ICON ====================
+export const createCrimeIcon = (type: string, isResolved: boolean = false) => {
+    const crimeTypes: Record<string, { color: string; emoji: string }> = {
+        THEFT: { color: '#7c3aed', emoji: '🏃' },
+        ASSAULT: { color: '#ef4444', emoji: '👊' },
+        DRUGS: { color: '#dc2626', emoji: '💊' },
+        FRAUD: { color: '#f59e0b', emoji: '💰' },
+        TRAFFIC: { color: '#eab308', emoji: '🚗' },
+        BURGLARY: { color: '#6366f1', emoji: '🏠' },
+        ROBBERY: { color: '#be123c', emoji: '🔪' },
+        OTHER: { color: '#6b7280', emoji: '⚠️' },
+    };
+
+    const crime = crimeTypes[type] || crimeTypes.OTHER;
+    const opacity = isResolved ? '0.5' : '1';
+
+    return new L.DivIcon({
+        html: `
+            <div class="relative group" style="opacity: ${opacity};">
+                <div class="w-7 h-7 rounded-full flex items-center justify-center shadow-lg ${isResolved ? '' : 'animate-pulse'}" style="background: ${crime.color}; border: 2px solid white;">
+                    <span class="text-xs">${crime.emoji}</span>
+                </div>
+                ${!isResolved ? '<div class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>' : ''}
+            </div>
+        `,
+        className: '',
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+        popupAnchor: [0, -18],
+    });
+};
+
+// ==================== SOS ICON (Emergency Alert) ====================
+export const createSOSIcon = (type: string = 'EMERGENCY', status: string = 'ACTIVE') => {
+    const isActive = status === 'ACTIVE' || status === 'RESPONDING';
+
+    return new L.DivIcon({
+        html: `
+            <div class="relative">
+                ${isActive ? '<div class="absolute inset-0 w-12 h-12 bg-red-500 rounded-full animate-ping opacity-50"></div>' : ''}
+                <div class="relative w-10 h-10 rounded-full flex items-center justify-center shadow-2xl ${isActive ? 'animate-pulse' : ''}" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: 3px solid white; box-shadow: 0 0 20px rgba(239,68,68,0.8);">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <!-- Siren icon -->
+                        <path d="M12 2L2 8l2 2v8h16v-8l2-2L12 2z"/>
+                        <circle cx="12" cy="12" r="3" fill="white"/>
+                    </svg>
+                </div>
+                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 bg-red-600 px-2 py-0.5 rounded text-[10px] text-white font-bold whitespace-nowrap">
+                    🚨 SOS
+                </div>
+            </div>
+        `,
+        className: '',
+        iconSize: [48, 48],
+        iconAnchor: [24, 24],
+        popupAnchor: [0, -28],
+    });
+};
+
+// ==================== MY LOCATION ICON ====================
+export const createMyLocationIcon = () => {
+    return new L.DivIcon({
+        html: `
+            <div class="relative">
+                <div class="absolute inset-0 w-10 h-10 bg-blue-500 rounded-full animate-ping opacity-30"></div>
+                <div class="relative w-8 h-8 rounded-full flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border: 3px solid white;">
+                    <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <!-- Person icon -->
+                        <circle cx="12" cy="7" r="4"/>
+                        <path d="M12 14c-5 0-8 2.5-8 5v2h16v-2c0-2.5-3-5-8-5z"/>
+                    </svg>
+                </div>
+            </div>
+        `,
+        className: '',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -24],
+    });
 };
 
 // ==================== THREAT CATEGORY COLORS ====================
