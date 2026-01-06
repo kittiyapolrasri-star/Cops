@@ -35,6 +35,9 @@ import {
     Flame,
     Siren,
     LandPlot,
+    Crosshair,
+    Layers,
+    Navigation,
 } from 'lucide-react';
 
 // ==================== MAP COMPONENTS ====================
@@ -124,6 +127,14 @@ export default function DashboardMap() {
     const [showPois, setShowPois] = useState(false);
     const [showCrimes, setShowCrimes] = useState(false);
     const [showSos, setShowSos] = useState(true);
+    const [showHeatmap, setShowHeatmap] = useState(false);
+
+    // ===== USER LOCATION =====
+    const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+    const [isLocating, setIsLocating] = useState(false);
+
+    // ===== SEARCH FILTERS =====
+    const [searchRadius, setSearchRadius] = useState<number>(0); // 0 = no filter, in km
 
     // ===== THREAT CATEGORY FILTERS =====
     const [threatFilters, setThreatFilters] = useState({
@@ -399,6 +410,65 @@ export default function DashboardMap() {
         setFlyTrigger((prev) => prev + 1);
     };
 
+    // Get user's current location
+    const getUserLocation = () => {
+        if (!navigator.geolocation) {
+            alert('เบราว์เซอร์ไม่รองรับ Geolocation');
+            return;
+        }
+
+        setIsLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const newLocation: [number, number] = [position.coords.latitude, position.coords.longitude];
+                setUserLocation(newLocation);
+                setCenter(newLocation);
+                setCurrentZoom(15);
+                setFlyTrigger((prev) => prev + 1);
+                setIsLocating(false);
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                alert('ไม่สามารถหาตำแหน่งได้: ' + error.message);
+                setIsLocating(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
+    // Heatmap data from crimes
+    const heatmapData = useMemo(() => {
+        return crimes
+            .filter((c: any) => c.latitude && c.longitude)
+            .map((c: any) => ({
+                lat: c.latitude,
+                lng: c.longitude,
+                intensity: c.type === 'VIOLENT' ? 1 : c.type === 'DRUGS' ? 0.8 : 0.5,
+            }));
+    }, [crimes]);
+
+    // Calculate distance between two points (Haversine formula)
+    const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    };
+
+    // Filter data by radius from user location or center
+    const filterByRadius = useCallback((items: any[], radiusKm: number) => {
+        if (radiusKm === 0 || !items) return items;
+        const refPoint = userLocation || center;
+        return items.filter((item: any) => {
+            if (!item.latitude || !item.longitude) return false;
+            const dist = calculateDistance(refPoint[0], refPoint[1], item.latitude, item.longitude);
+            return dist <= radiusKm;
+        });
+    }, [userLocation, center]);
+
     // GeoJSON style function
     const geoJsonStyle = useCallback(
         (feature: any) => {
@@ -545,6 +615,15 @@ export default function DashboardMap() {
                         <Siren className="w-3 h-3" />
                         <span>SOS ({sosAlerts.length})</span>
                     </button>
+
+                    <button
+                        onClick={() => setShowHeatmap(!showHeatmap)}
+                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] transition ${showHeatmap ? 'bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-red-500/20 text-orange-400' : 'bg-gray-800 text-gray-500'
+                            }`}
+                    >
+                        <Layers className="w-3 h-3" />
+                        <span>Heatmap</span>
+                    </button>
                 </div>
 
                 {/* Threat Filters */}
@@ -616,6 +695,62 @@ export default function DashboardMap() {
                 </div>
             )}
 
+            {/* ===== FLOATING CONTROLS (Right Side) ===== */}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 z-[500] flex flex-col gap-2">
+                {/* My Location Button */}
+                <button
+                    onClick={getUserLocation}
+                    disabled={isLocating}
+                    className={`p-3 rounded-full shadow-lg transition-all ${isLocating
+                        ? 'bg-blue-600 animate-pulse'
+                        : userLocation
+                            ? 'bg-blue-600 hover:bg-blue-500'
+                            : 'bg-gray-800 hover:bg-gray-700'
+                        } text-white`}
+                    title="ตำแหน่งของฉัน"
+                >
+                    <Crosshair className={`w-5 h-5 ${isLocating ? 'animate-spin' : ''}`} />
+                </button>
+
+                {/* Zoom Controls */}
+                <button
+                    onClick={() => { setCurrentZoom(Math.min(currentZoom + 1, 18)); setFlyTrigger(t => t + 1); }}
+                    className="p-3 bg-gray-800 hover:bg-gray-700 rounded-full shadow-lg text-white"
+                    title="ซูมเข้า"
+                >
+                    <span className="text-lg font-bold">+</span>
+                </button>
+                <button
+                    onClick={() => { setCurrentZoom(Math.max(currentZoom - 1, 5)); setFlyTrigger(t => t + 1); }}
+                    className="p-3 bg-gray-800 hover:bg-gray-700 rounded-full shadow-lg text-white"
+                    title="ซูมออก"
+                >
+                    <span className="text-lg font-bold">−</span>
+                </button>
+            </div>
+
+            {/* ===== RADIUS FILTER (Bottom Center) ===== */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[500] bg-gray-900/95 backdrop-blur-md rounded-full px-4 py-2 border border-gray-700 flex items-center gap-3">
+                <span className="text-xs text-gray-400">รัศมี:</span>
+                <select
+                    value={searchRadius}
+                    onChange={(e) => setSearchRadius(Number(e.target.value))}
+                    className="bg-gray-800 text-white text-xs px-2 py-1 rounded-lg border border-gray-600 focus:outline-none focus:border-cyan-500"
+                >
+                    <option value={0}>ทั้งหมด</option>
+                    <option value={1}>1 กม.</option>
+                    <option value={3}>3 กม.</option>
+                    <option value={5}>5 กม.</option>
+                    <option value={10}>10 กม.</option>
+                    <option value={20}>20 กม.</option>
+                </select>
+                {searchRadius > 0 && (
+                    <span className="text-xs text-cyan-400">
+                        จากตำแหน่ง{userLocation ? 'ของคุณ' : 'กลางแผนที่'}
+                    </span>
+                )}
+            </div>
+
             {/* ===== MAP CONTAINER ===== */}
             <MapContainer
                 center={THAILAND_CENTER}
@@ -631,6 +766,64 @@ export default function DashboardMap() {
 
                 {/* GeoJSON Province Boundaries */}
                 {geoJsonData && <GeoJSON data={geoJsonData} style={geoJsonStyle} />}
+
+                {/* User Location Marker */}
+                {userLocation && (
+                    <Marker
+                        position={userLocation}
+                        icon={L.divIcon({
+                            className: 'user-location-marker',
+                            html: `
+                                <div style="position: relative;">
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(59, 130, 246, 0.3); border-radius: 50%; animation: pulse 2s ease-out infinite;"></div>
+                                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; background: #3b82f6; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59, 130, 246, 0.7);"></div>
+                                </div>
+                            `,
+                            iconSize: [40, 40],
+                            iconAnchor: [20, 20],
+                        })}
+                        zIndexOffset={2000}
+                    >
+                        <Popup>
+                            <div className="bg-gray-900 text-white p-2 rounded text-center">
+                                <p className="font-bold text-sm text-blue-400">📍 ตำแหน่งของคุณ</p>
+                                <p className="text-xs text-gray-400 font-mono">
+                                    {userLocation[0].toFixed(6)}, {userLocation[1].toFixed(6)}
+                                </p>
+                            </div>
+                        </Popup>
+                    </Marker>
+                )}
+
+                {/* Search Radius Circle */}
+                {searchRadius > 0 && (userLocation || center) && (
+                    <Circle
+                        center={userLocation || center}
+                        radius={searchRadius * 1000}
+                        pathOptions={{
+                            color: '#06b6d4',
+                            fillColor: '#06b6d4',
+                            fillOpacity: 0.1,
+                            weight: 2,
+                            dashArray: '5, 10',
+                        }}
+                    />
+                )}
+
+                {/* Crime Heatmap Layer */}
+                {showHeatmap && heatmapData.map((point: any, idx: number) => (
+                    <Circle
+                        key={`heat-${idx}`}
+                        center={[point.lat, point.lng]}
+                        radius={200 * point.intensity}
+                        pathOptions={{
+                            color: 'transparent',
+                            fillColor: point.intensity > 0.7 ? '#ef4444' : point.intensity > 0.5 ? '#f97316' : '#eab308',
+                            fillOpacity: 0.4 * point.intensity,
+                            weight: 0,
+                        }}
+                    />
+                ))}
 
                 {/* Stations */}
                 {showStations && zoomShowStations && filteredStations.filter((s) => s.latitude && s.longitude).map((station) => (
