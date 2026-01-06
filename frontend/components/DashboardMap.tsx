@@ -988,15 +988,11 @@ export default function DashboardMap() {
                         icon={createStationIcon(station.name, patrolCountByStation[station.id] || 0, selectedStation === station.id, false)}
                         eventHandlers={{ click: () => handleStationClick(station) }}
                     >
-                        <Popup className="custom-popup">
-                            <div className="bg-gray-900 text-white p-3 rounded-lg min-w-[180px]">
-                                <h3 className="font-bold text-sm mb-1">{station.name}</h3>
-                                <p className="text-xs text-gray-400">{station.province?.name}</p>
-                                <div className="flex gap-2 mt-2 text-xs">
-                                    <span className="bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">
-                                        สายตรวจ: {patrolCountByStation[station.id] || 0}
-                                    </span>
-                                </div>
+                        {/* Simple tooltip-style popup */}
+                        <Popup className="station-tooltip" closeButton={false} autoPan={false}>
+                            <div className="bg-gray-900 text-white px-2 py-1 rounded text-xs">
+                                <span className="font-bold">{station.name.replace('สถานีตำรวจภูธร', 'สภ.')}</span>
+                                <span className="text-gray-400 ml-2">({patrolCountByStation[station.id] || 0} สายตรวจ)</span>
                             </div>
                         </Popup>
                     </Marker>
