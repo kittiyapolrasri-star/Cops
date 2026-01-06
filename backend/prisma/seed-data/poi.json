@@ -1,0 +1,50 @@
+[
+    {
+        "name": "ธนาคารกสิกรไทย สาขาทองหล่อ",
+        "description": "สาขาหลักปากซอยทองหล่อ",
+        "category": "BANK",
+        "priority": "HIGH",
+        "latitude": 13.7251,
+        "longitude": 100.5785,
+        "address": "ปากซอยทองหล่อ ถนนสุขุมวิท",
+        "stationCode": "STL01",
+        "contactInfo": "02-123-4567"
+    },
+    {
+        "name": "ห้างทองเยาวราช",
+        "description": "ร้านทองขนาดใหญ่",
+        "category": "GOLD_SHOP",
+        "priority": "HIGH",
+        "latitude": 13.7285,
+        "longitude": 100.5812,
+        "address": "ทองหล่อ ซอย 5",
+        "stationCode": "STL01"
+    },
+    {
+        "name": "โรงเรียนนานาชาติ",
+        "category": "SCHOOL",
+        "priority": "MEDIUM",
+        "latitude": 13.7350,
+        "longitude": 100.5840,
+        "address": "ทองหล่อ ซอย 15",
+        "stationCode": "STL01"
+    },
+    {
+        "name": "โรงพยาบาลสมิติเวช",
+        "category": "HOSPITAL",
+        "priority": "MEDIUM",
+        "latitude": 13.7380,
+        "longitude": 100.5790,
+        "address": "สุขุมวิท 49",
+        "stationCode": "STL01"
+    },
+    {
+        "name": "The Commons",
+        "category": "MALL",
+        "priority": "LOW",
+        "latitude": 13.7355,
+        "longitude": 100.5825,
+        "address": "ทองหล่อ 17",
+        "stationCode": "STL01"
+    }
+]

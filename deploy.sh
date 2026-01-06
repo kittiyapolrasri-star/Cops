@@ -29,7 +29,7 @@ sleep 30
 
 # 6. Run Database Migrations (Explicitly)
 echo "🔄 Running Database Migrations..."
-docker exec cops-backend npx prisma migrate deploy || echo "⚠️ Migration command failed (might have run during startup)"
+docker exec cops-backend npx prisma db push || echo "⚠️ Database push failed"
 
 # 7. Seed Database (Safe to run multiple times due to upsert)
 echo "🌱 Seeding Database..."

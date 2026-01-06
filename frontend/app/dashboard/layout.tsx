@@ -21,6 +21,8 @@ import {
     ClipboardList,
     Flame,
     MessageCircle,
+    Building2,
+    Scale,
 } from 'lucide-react';
 
 import NotificationBell from '@/components/NotificationBell';
@@ -61,6 +63,8 @@ export default function DashboardLayout({
         { name: 'SOS', href: '/dashboard/sos', icon: AlertTriangle },
         { name: 'พื้นที่เสี่ยง', href: '/dashboard/riskzones', icon: AlertTriangle },
         { name: 'รายงานเหตุการณ์', href: '/dashboard/incidents', icon: FileText },
+        { name: 'Organization', href: '/dashboard/organization', icon: Building2 },
+        { name: 'GPS Compliance', href: '/dashboard/gps-compliance', icon: Scale },
         { name: 'ผู้ใช้งาน', href: '/dashboard/users', icon: User },
         { name: 'สถิติ', href: '/dashboard/stats', icon: Radio },
     ];

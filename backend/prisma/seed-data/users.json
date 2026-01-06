@@ -1,0 +1,40 @@
+[
+    {
+        "username": "admin",
+        "password": "password123",
+        "firstName": "Admin",
+        "lastName": "System",
+        "role": "HQ",
+        "rank": "พล.ต.อ."
+    },
+    {
+        "username": "station_commander",
+        "password": "password123",
+        "firstName": "สมชาย",
+        "lastName": "ใจดี",
+        "role": "STATION",
+        "rank": "พ.ต.อ.",
+        "position": "ผกก.",
+        "stationCode": "STL01"
+    },
+    {
+        "username": "patrol01",
+        "password": "password123",
+        "firstName": "วิชัย",
+        "lastName": "กล้าหาญ",
+        "role": "PATROL",
+        "rank": "ส.ต.อ.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "STL01"
+    },
+    {
+        "username": "patrol02",
+        "password": "password123",
+        "firstName": "มานะ",
+        "lastName": "อดทน",
+        "role": "PATROL",
+        "rank": "ส.ต.ท.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "STL01"
+    }
+]
