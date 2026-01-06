@@ -45,7 +45,7 @@ export default function OrganizationPage() {
         }
     };
 
-    const filterHierarchy = (items: any[]) => {
+    const filterHierarchy = (items: any[]): any[] => {
         if (!searchTerm) return items;
         return items.filter(item =>
             item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
