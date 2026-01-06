@@ -23,40 +23,49 @@ const DashboardMap = dynamic(() => import('@/components/DashboardMap'), {
     loading: () => <div className="h-[500px] bg-slate-100 flex items-center justify-center">Loading Map...</div>,
 });
 
+import { gpsComplianceApi } from '@/lib/api';
+
 export default function GpsCompliancePage() {
     const [violations, setViolations] = useState<any[]>([]);
+    const [stats, setStats] = useState<any>(null);
+    const [zones, setZones] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Mock data for initial display until backend is connected
-    const mockViolations = [
-        {
-            id: '1',
-            user: { firstName: 'วิชัย', lastName: 'กล้าหาญ', rank: 'ส.ต.อ.' },
-            type: 'OUT_OF_ZONE',
-            timestamp: new Date().toISOString(),
-            status: 'PENDING',
-            location: { lat: 13.732, lng: 100.583 }
-        },
-        {
-            id: '2',
-            user: { firstName: 'มานะ', lastName: 'อดทน', rank: 'ส.ต.ท.' },
-            type: 'NO_SIGNAL',
-            timestamp: new Date(Date.now() - 3600000).toISOString(),
-            status: 'ACKNOWLEDGED',
-            location: { lat: 13.735, lng: 100.581 }
-        }
-    ];
-
     useEffect(() => {
-        // In real web app, call gpsComplianceApi.getViolations()
-        setViolations(mockViolations);
-        setIsLoading(false);
+        fetchData();
     }, []);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const [violationsData, statsData, zonesData] = await Promise.all([
+                gpsComplianceApi.getViolations({ isAcknowledged: false }),
+                gpsComplianceApi.getStats(),
+                gpsComplianceApi.getDutyZones()
+            ]);
+            setViolations(violationsData.data || []);
+            setStats(statsData.data);
+            setZones(zonesData.data || []);
+        } catch (error) {
+            console.error('Failed to fetch GPS compliance data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAcknowledge = async (id: string) => {
+        try {
+            await gpsComplianceApi.acknowledgeViolation(id);
+            fetchData(); // Refresh data
+        } catch (error) {
+            console.error('Failed to acknowledge violation:', error);
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'ACKNOWLEDGED':
-                return <Badge variant="default" className="bg-green-600">Receieved</Badge>;
+                return <Badge variant="default" className="bg-green-600">Acknowledged</Badge>;
             case 'PENDING':
                 return <Badge variant="destructive">Pending</Badge>;
             default:
@@ -85,7 +94,7 @@ export default function GpsCompliancePage() {
                         <ShieldCheck className="h-4 w-4 text-green-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">94.2%</div>
+                        <div className="text-2xl font-bold">{stats?.complianceRate || '100'}%</div>
                         <p className="text-xs text-muted-foreground">Last 24 hours</p>
                     </CardContent>
                 </Card>
@@ -95,7 +104,7 @@ export default function GpsCompliancePage() {
                         <AlertTriangle className="h-4 w-4 text-red-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">3</div>
+                        <div className="text-2xl font-bold text-red-600">{stats?.activeViolations || 0}</div>
                         <p className="text-xs text-muted-foreground">Requires attention</p>
                     </CardContent>
                 </Card>
@@ -105,7 +114,7 @@ export default function GpsCompliancePage() {
                         <MapPin className="h-4 w-4 text-blue-600" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">12</div>
+                        <div className="text-2xl font-bold">{stats?.activeZones || 0}</div>
                         <p className="text-xs text-muted-foreground">Zones monitored</p>
                     </CardContent>
                 </Card>
@@ -170,7 +179,7 @@ export default function GpsCompliancePage() {
                                         <div className="flex items-center gap-4">
                                             {getStatusBadge(violation.status)}
                                             {violation.status === 'PENDING' && (
-                                                <Button size="sm" variant="secondary">
+                                                <Button size="sm" variant="secondary" onClick={() => handleAcknowledge(violation.id)}>
                                                     Acknowledge
                                                 </Button>
                                             )}
