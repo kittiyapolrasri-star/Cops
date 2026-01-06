@@ -36,8 +36,8 @@ export default function OrganizationPage() {
                 organizationApi.getHierarchy(),
                 organizationApi.getStats()
             ]);
-            setBureaus(bureausData);
-            setStats(statsData);
+            setBureaus(bureausData.data);
+            setStats(statsData.data);
         } catch (error) {
             console.error('Failed to fetch organization data:', error);
         } finally {
