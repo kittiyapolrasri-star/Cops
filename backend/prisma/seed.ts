@@ -102,7 +102,7 @@ async function main() {
                         latitude: poi.latitude,
                         longitude: poi.longitude,
                         address: poi.address,
-                        contactInfo: poi.contactInfo,
+
                         stationId: station.id,
                         createdById: creator.id,
                     },
