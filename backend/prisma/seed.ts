@@ -214,15 +214,14 @@ async function main() {
             await prisma.incident.create({
                 data: {
                     type: incident.type,
-                    title: incident.title,
                     description: incident.description,
                     latitude: incident.latitude,
                     longitude: incident.longitude,
-                    status: incident.status,
-                    reportedById: user.id,
+                    isResolved: incident.isResolved || false,
+                    userId: user.id,
                 },
             });
-            console.log(`✓ Incident: ${incident.title}`);
+            console.log(`✓ Incident: ${incident.type}`);
         }
     }
 

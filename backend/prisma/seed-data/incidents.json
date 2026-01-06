@@ -1,38 +1,34 @@
 [
     {
         "type": "PREVENTION",
-        "title": "ตรวจพื้นที่เสี่ยงรอบดึก",
         "description": "ตรวจพื้นที่สถานบันเทิงและจุดเปลี่ยวตามแผน ไม่พบเหตุผิดปกติ",
         "latitude": 13.7438,
         "longitude": 100.5555,
         "userUsername": "patrol1",
-        "status": "RESOLVED"
+        "isResolved": true
     },
     {
         "type": "SUPPRESSION",
-        "title": "จับกุมผู้ต้องสงสัยยาเสพติด",
         "description": "จับกุมผู้ต้องสงสัย 2 ราย พร้อมของกลางยาบ้า 50 เม็ด",
         "latitude": 13.7410,
         "longitude": 100.5530,
         "userUsername": "patrol2",
-        "status": "RESOLVED"
+        "isResolved": true
     },
     {
         "type": "PREVENTION",
-        "title": "ช่วยเหลือประชาชนรถเสีย",
         "description": "ช่วยเหลือประชาชนรถยนต์เสียกลางทาง ประสานช่างมาดำเนินการ",
         "latitude": 13.7425,
         "longitude": 100.5540,
         "userUsername": "patrol3",
-        "status": "RESOLVED"
+        "isResolved": true
     },
     {
         "type": "SUPPRESSION",
-        "title": "เข้าระงับเหตุทะเลาะวิวาท",
         "description": "เหตุทะเลาะวิวาทหน้าสถานบันเทิง ควบคุมสถานการณ์ได้ มีผู้บาดเจ็บ 2 ราย",
         "latitude": 13.7438,
         "longitude": 100.5555,
         "userUsername": "patrol1",
-        "status": "ACTIVE"
+        "isResolved": false
     }
 ]
