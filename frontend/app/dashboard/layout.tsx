@@ -23,6 +23,7 @@ import {
     MessageCircle,
     Building2,
     Scale,
+    Loader,
 } from 'lucide-react';
 
 import NotificationBell from '@/components/NotificationBell';
@@ -34,24 +35,42 @@ export default function DashboardLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
-    const { user, isAuthenticated, checkAuth, logout } = useAuthStore();
+    const { user, isAuthenticated, token, checkAuth, logout } = useAuthStore();
     const [collapsed, setCollapsed] = useState(false);
+    const [isHydrated, setIsHydrated] = useState(false);
+
+    // Wait for zustand to hydrate from localStorage
+    useEffect(() => {
+        setIsHydrated(true);
+    }, []);
 
     useEffect(() => {
+        if (!isHydrated) return; // Wait for hydration
+
         checkAuth();
-        if (!isAuthenticated) {
+
+        // Only redirect if we're hydrated and definitely not authenticated
+        if (!isAuthenticated && !token) {
             router.push('/login');
         }
-    }, [isAuthenticated, router, checkAuth]);
+    }, [isHydrated, isAuthenticated, token, router, checkAuth]);
+
+    // Show loading while hydrating or checking auth
+    if (!isHydrated || (!isAuthenticated && !token)) {
+        return (
+            <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader className="w-8 h-8 animate-spin text-white mx-auto mb-4" />
+                    <p className="text-gray-400 text-sm">กำลังตรวจสอบสิทธิ์...</p>
+                </div>
+            </div>
+        );
+    }
 
     const handleLogout = () => {
         logout();
         router.push('/login');
     };
-
-    if (!isAuthenticated) {
-        return null;
-    }
 
     const navigation = [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
