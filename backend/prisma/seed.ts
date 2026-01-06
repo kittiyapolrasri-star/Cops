@@ -249,6 +249,73 @@ async function main() {
         }
     }
 
+    // 10. Seed Patrol Plans with Checkpoints
+    const patrolPlanData = JSON.parse(
+        fs.readFileSync(path.join(__dirname, 'seed-data/patrol-plans.json'), 'utf-8'),
+    );
+
+    for (const plan of patrolPlanData) {
+        const station = await prisma.station.findUnique({ where: { code: plan.stationCode } });
+        const creator = await prisma.user.findFirst({
+            where: { stationId: station?.id, role: { in: ['STATION', 'HQ'] } }
+        }) || await prisma.user.findFirst({ where: { role: 'HQ' } });
+
+        if (station && creator) {
+            // Parse time strings into Date objects
+            const today = new Date();
+            const [startHour, startMin] = plan.startTime.split(':').map(Number);
+            const [endHour, endMin] = plan.endTime.split(':').map(Number);
+
+            const startTime = new Date(today);
+            startTime.setHours(startHour, startMin, 0, 0);
+
+            const endTime = new Date(today);
+            endTime.setHours(endHour, endMin, 0, 0);
+            // If end time is before start time, it's next day
+            if (endTime <= startTime) {
+                endTime.setDate(endTime.getDate() + 1);
+            }
+
+            // Check if plan already exists
+            const existing = await prisma.patrolPlan.findFirst({
+                where: { name: plan.name, stationId: station.id }
+            });
+
+            if (!existing) {
+                const createdPlan = await prisma.patrolPlan.create({
+                    data: {
+                        name: plan.name,
+                        description: plan.description,
+                        stationId: station.id,
+                        createdById: creator.id,
+                        startTime,
+                        endTime,
+                        repeatDaily: plan.repeatDaily || false,
+                    },
+                });
+
+                // Create checkpoints for this plan
+                if (plan.checkpoints && plan.checkpoints.length > 0) {
+                    for (const cp of plan.checkpoints) {
+                        await prisma.patrolCheckpoint.create({
+                            data: {
+                                planId: createdPlan.id,
+                                name: cp.name,
+                                latitude: cp.latitude,
+                                longitude: cp.longitude,
+                                radius: cp.radius || 50,
+                                sequence: cp.sequence,
+                                stayDuration: cp.stayDuration,
+                            },
+                        });
+                    }
+                }
+
+                console.log(`✓ PatrolPlan: ${plan.name} (${plan.checkpoints?.length || 0} checkpoints)`);
+            }
+        }
+    }
+
     console.log('✅ Seeding completed.');
 }
 
