@@ -154,6 +154,10 @@ export default function DashboardMap() {
     // ===== TIME MODE =====
     const [timeMode, setTimeMode] = useState<'live' | 'historical'>('live');
 
+    // ===== INTERCEPT POINTS (Layer 6) =====
+    const [showInterceptPoints, setShowInterceptPoints] = useState(false);
+    const [selectedSOS, setSelectedSOS] = useState<any>(null);
+
     // Zoom thresholds
     const zoomShowStations = currentZoom >= 8;
     const zoomShowPatrols = currentZoom >= 10;
@@ -300,6 +304,49 @@ export default function DashboardMap() {
             .sort((a, b) => a.distance - b.distance)
             .slice(0, count);
     }, [filteredPatrols]);
+
+    // Calculate intercept points for SOS response (Layer 6)
+    // Suggests optimal positions where patrols should move to intercept/respond
+    const calculateInterceptPoints = useCallback((sosLat: number, sosLng: number): {
+        point: [number, number];
+        direction: string;
+        distance: number;
+        assignedPatrol?: any;
+    }[] => {
+        // Calculate 4 cardinal intercept points (N, S, E, W) around SOS location
+        const interceptRadius = 0.5; // km from SOS
+        const directions = [
+            { name: 'เหนือ', bearing: 0 },
+            { name: 'ตะวันออก', bearing: 90 },
+            { name: 'ใต้', bearing: 180 },
+            { name: 'ตะวันตก', bearing: 270 },
+        ];
+
+        const R = 6371; // Earth's radius in km
+        const d = interceptRadius / R;
+        const lat1 = sosLat * Math.PI / 180;
+        const lon1 = sosLng * Math.PI / 180;
+
+        const nearbyPatrols = findNearestPatrols(sosLat, sosLng, 8);
+
+        return directions.map((dir, idx) => {
+            const brng = dir.bearing * Math.PI / 180;
+            const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng));
+            const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
+
+            const interceptPoint: [number, number] = [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI];
+
+            // Assign the closest unassigned patrol to this intercept point
+            const assignedPatrol = nearbyPatrols[idx] || null;
+
+            return {
+                point: interceptPoint,
+                direction: dir.name,
+                distance: interceptRadius,
+                assignedPatrol,
+            };
+        });
+    }, [findNearestPatrols]);
 
     // Province info for selected province
     const provinceInfo = useMemo(() => {
@@ -1141,10 +1188,83 @@ export default function DashboardMap() {
                                 >
                                     ดูรายละเอียดฉุกเฉิน
                                 </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedSOS(sos);
+                                        setShowInterceptPoints(true);
+                                    }}
+                                    className="mt-1 w-full bg-amber-600 hover:bg-amber-500 text-white text-xs py-1.5 rounded transition-colors"
+                                >
+                                    🎯 แสดงจุดสะกัด
+                                </button>
                             </div>
                         </Popup>
                     </Marker>
                 ))}
+
+                {/* Intercept Points for SOS (Layer 6) */}
+                {showInterceptPoints && selectedSOS && (
+                    <>
+                        {/* Intercept radius circle */}
+                        <Circle
+                            center={[selectedSOS.latitude, selectedSOS.longitude]}
+                            radius={500}
+                            pathOptions={{
+                                color: '#f59e0b',
+                                fillColor: '#f59e0b',
+                                fillOpacity: 0.1,
+                                weight: 2,
+                                dashArray: '5, 5',
+                            }}
+                        />
+                        {/* Intercept point markers */}
+                        {calculateInterceptPoints(selectedSOS.latitude, selectedSOS.longitude).map((ip, idx) => (
+                            <React.Fragment key={`intercept-${idx}`}>
+                                <Marker
+                                    position={ip.point}
+                                    icon={L.divIcon({
+                                        className: 'intercept-marker',
+                                        html: `
+                                            <div style="background: #f59e0b; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+                                                <span style="color: white; font-weight: bold; font-size: 10px;">${idx + 1}</span>
+                                            </div>
+                                        `,
+                                        iconSize: [24, 24],
+                                        iconAnchor: [12, 12],
+                                    })}
+                                >
+                                    <Popup>
+                                        <div className="bg-gray-900 text-white p-2 rounded min-w-[150px]">
+                                            <p className="font-bold text-sm text-amber-400">🎯 จุดสะกัด {ip.direction}</p>
+                                            <p className="text-xs text-gray-400">{ip.distance} km จาก SOS</p>
+                                            {ip.assignedPatrol && (
+                                                <p className="text-xs text-cyan-400 mt-1">
+                                                    👮 {ip.assignedPatrol.user?.rank} {ip.assignedPatrol.user?.firstName}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                                {/* Line from intercept point to assigned patrol */}
+                                {ip.assignedPatrol && (
+                                    <Polyline
+                                        positions={[
+                                            ip.point,
+                                            [ip.assignedPatrol.currentLocation.latitude, ip.assignedPatrol.currentLocation.longitude]
+                                        ]}
+                                        pathOptions={{
+                                            color: '#06b6d4',
+                                            weight: 2,
+                                            dashArray: '3, 6',
+                                            opacity: 0.7,
+                                        }}
+                                    />
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </>
+                )}
 
                 {/* Selected Location Marker */}
                 {selectedResult && selectedResult.type === 'location' && (

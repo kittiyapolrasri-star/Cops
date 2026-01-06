@@ -14,7 +14,9 @@ import {
     Filter,
     TrendingUp,
     BarChart3,
+    Clock,
 } from 'lucide-react';
+import CrimeClock from '@/components/CrimeClock';
 
 // Crime type config
 const crimeTypeConfig: Record<string, { label: string; color: string; emoji: string }> = {
@@ -190,6 +192,23 @@ export default function CrimesPage() {
                     ))}
                 </div>
             )}
+
+            {/* Crime Clock */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <CrimeClock stationId={selectedStation || undefined} months={6} />
+                <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Clock className="w-5 h-5 text-orange-400" />
+                        <h3 className="font-bold text-white">Crime Insights</h3>
+                    </div>
+                    <div className="space-y-3 text-sm text-gray-400">
+                        <p>• ใช้ข้อมูลนาฬิกาอาชญากรรมเพื่อวางแผนสายตรวจ</p>
+                        <p>• เพิ่มการลาดตระเวนในช่วงเวลาที่เกิดเหตุบ่อย</p>
+                        <p>• ประเมินความเสี่ยงตามวันในสัปดาห์</p>
+                        <p>• เชื่อมโยงกับแผนการตรวจ (Layer 4)</p>
+                    </div>
+                </div>
+            </div>
 
             {/* Filters */}
             <div className="flex flex-wrap gap-4 mb-6">

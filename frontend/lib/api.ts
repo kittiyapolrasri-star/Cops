@@ -201,6 +201,14 @@ export const crimeApi = {
         api.get('/crimes/clusters', { params }),
     getStats: (stationId?: string, months?: number) =>
         api.get('/crimes/stats', { params: { stationId, months } }),
+
+    // Crime Clock (นาฬิกาอาชญากรรม)
+    getCrimeClock: (params?: { stationId?: string; months?: number }) =>
+        api.get('/crimes/clock', { params }),
+
+    // Nearby Stations (Buffer Zone)
+    getNearbyStations: (latitude: number, longitude: number, radius?: number) =>
+        api.get('/crimes/nearby-stations', { params: { latitude, longitude, radius } }),
 };
 
 // ==================== CITIZEN TIP API (Layer 7) ====================

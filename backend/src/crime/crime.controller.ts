@@ -79,6 +79,27 @@ export class CrimeController {
         });
     }
 
+    @Get('clock')
+    getCrimeClock(
+        @Query('stationId') stationId?: string,
+        @Query('months') months?: string,
+    ) {
+        return this.crimeService.getCrimeClock(stationId, months ? parseInt(months) : 6);
+    }
+
+    @Get('nearby-stations')
+    getNearbyStations(
+        @Query('latitude') latitude: string,
+        @Query('longitude') longitude: string,
+        @Query('radius') radius?: string,
+    ) {
+        return this.crimeService.getNearbyStations(
+            parseFloat(latitude),
+            parseFloat(longitude),
+            radius ? parseFloat(radius) : 10
+        );
+    }
+
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.crimeService.findById(id);
