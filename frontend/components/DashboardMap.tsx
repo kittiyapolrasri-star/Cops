@@ -731,7 +731,7 @@ export default function DashboardMap() {
 
             {/* ===== PROVINCE INFO PANEL ===== */}
             {provinceInfo && (
-                <div className="absolute top-16 left-4 z-[500] bg-black/80 backdrop-blur-md border border-emerald-500/50 rounded-xl p-3 shadow-2xl">
+                <div className="absolute top-28 left-4 z-[400] bg-black/90 backdrop-blur-md border border-emerald-500/50 rounded-xl p-3 shadow-2xl">
                     <div className="flex items-center gap-2 mb-2">
                         <MapPin className="w-4 h-4 text-emerald-400" />
                         <h3 className="font-bold text-white text-sm">{provinceInfo.name}</h3>
