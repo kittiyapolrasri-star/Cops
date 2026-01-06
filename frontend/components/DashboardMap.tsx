@@ -580,7 +580,7 @@ export default function DashboardMap() {
     return (
         <div className="w-full h-full relative">
             {/* ===== TOP FILTER BAR ===== */}
-            <div className="absolute top-4 left-4 z-[500] flex gap-2">
+            <div className="absolute top-4 left-56 z-[500] flex gap-2">
                 {/* Bureau Filter */}
                 <div className="relative">
                     <select
@@ -778,7 +778,7 @@ export default function DashboardMap() {
 
             {/* ===== PROVINCE INFO PANEL ===== */}
             {provinceInfo && (
-                <div className="absolute top-36 left-4 z-[400] bg-black/90 backdrop-blur-md border border-emerald-500/50 rounded-xl p-3 shadow-2xl">
+                <div className="absolute top-36 left-56 z-[400] bg-black/90 backdrop-blur-md border border-emerald-500/50 rounded-xl p-3 shadow-2xl">
                     <div className="flex items-center gap-2 mb-2">
                         <MapPin className="w-4 h-4 text-emerald-400" />
                         <h3 className="font-bold text-white text-sm">{provinceInfo.name}</h3>
@@ -1280,7 +1280,7 @@ export default function DashboardMap() {
 
             {/* ===== SELECTED STATION INFO PANEL ===== */}
             {selectedStation && selectedResult?.data && (
-                <div className="absolute bottom-4 left-4 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-4 shadow-2xl max-w-[260px]">
+                <div className="absolute bottom-4 left-56 z-[500] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-4 shadow-2xl max-w-[260px]">
                     <button onClick={() => { setSelectedStation(null); setSelectedResult(null); }} className="absolute top-2 right-2 text-gray-500 hover:text-white">
                         <X className="w-4 h-4" />
                     </button>
