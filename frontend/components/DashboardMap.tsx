@@ -60,6 +60,19 @@ function ZoomHandler({ onZoomChange }: { onZoomChange: (zoom: number) => void })
     return null;
 }
 
+// Handler to close detail panel when clicking on map background
+function MapClickHandler({ onMapClick }: { onMapClick: () => void }) {
+    useMapEvents({
+        click: (e) => {
+            // Only trigger if clicking on map background (not on markers)
+            if (e.originalEvent.target === e.target.getContainer()) {
+                onMapClick();
+            }
+        },
+    });
+    return null;
+}
+
 // ==================== INTERFACES ====================
 
 interface SearchResult {
@@ -614,6 +627,7 @@ export default function DashboardMap() {
                 <TileLayer url={MAP_TILES.dark} attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' />
                 <MapController center={center} zoom={currentZoom} trigger={flyTrigger} />
                 <ZoomHandler onZoomChange={setCurrentZoom} />
+                <MapClickHandler onMapClick={() => setDetailPanelOpen(false)} />
 
                 {/* GeoJSON Province Boundaries */}
                 {geoJsonData && <GeoJSON data={geoJsonData} style={geoJsonStyle} />}
