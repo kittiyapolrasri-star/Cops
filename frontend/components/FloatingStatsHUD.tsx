@@ -74,7 +74,7 @@ export default function FloatingStatsHUD({ stats }: FloatingStatsHUDProps) {
     };
 
     return (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[500] flex gap-3">
+        <div className="absolute top-4 right-56 z-[450] flex gap-3">
             {cards.map((card, index) => {
                 const colors = getColorClasses(card.color);
                 return (
