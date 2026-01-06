@@ -47,13 +47,47 @@
     },
     {
         "category": "ILLEGAL_GAMBLING",
-        "latitude": 13.7422,
-        "longitude": 100.5545,
-        "address": "หลังตลาดนัดกลางคืน",
+        "latitude": 13.7115,
+        "longitude": 100.5978,
+        "address": "หลังตลาดพระโขนง",
         "description": "มีวงเล่นการพนันหลังตลาด ทุกคืนวันเสาร์",
         "isAnonymous": true,
         "priority": 1,
-        "stationCode": "STL01",
+        "stationCode": "SPR01",
         "status": "INVESTIGATING"
+    },
+    {
+        "category": "DRUG_ACTIVITY",
+        "latitude": 13.7130,
+        "longitude": 100.5995,
+        "address": "ซ.สุขุมวิท 71 ซอยลึก",
+        "description": "พบคนมาซื้อยาบ่อยช่วงกลางคืน",
+        "isAnonymous": true,
+        "priority": 2,
+        "stationCode": "SPR01",
+        "status": "ACTIONABLE"
+    },
+    {
+        "category": "SUSPICIOUS_VEHICLE",
+        "latitude": 13.7220,
+        "longitude": 100.5268,
+        "address": "หน้าอาคารสาทร",
+        "description": "รถกระบะสีดำจอดสังเกตการณ์ทุกคืน",
+        "contactPhone": "089-555-1234",
+        "isAnonymous": false,
+        "priority": 1,
+        "stationCode": "SAT01",
+        "status": "INVESTIGATING"
+    },
+    {
+        "category": "THEFT_CONCERN",
+        "latitude": 13.7315,
+        "longitude": 100.5420,
+        "address": "ที่จอดจักรยานสวนลุมพินี",
+        "description": "มีคนตัดโซ่ขโมยจักรยานทุกเช้า",
+        "isAnonymous": true,
+        "priority": 2,
+        "stationCode": "SLP01",
+        "status": "VERIFIED"
     }
 ]

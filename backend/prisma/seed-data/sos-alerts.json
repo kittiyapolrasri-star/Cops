@@ -5,7 +5,7 @@
         "longitude": 100.5550,
         "address": "ซอยทองหล่อ 10",
         "message": "มีเหตุฉุกเฉิน ต้องการความช่วยเหลือ",
-        "userUsername": "patrol1",
+        "userUsername": "patrol_tl01",
         "stationCode": "STL01",
         "status": "RESOLVED",
         "resolutionNote": "ตำรวจเข้าช่วยเหลือแล้ว"
@@ -16,7 +16,7 @@
         "longitude": 100.5570,
         "address": "ซ.ทองหล่อ 13",
         "message": "พบกลุ่มผู้ต้องสงสัย ต้องการกำลังเสริม",
-        "userUsername": "patrol2",
+        "userUsername": "patrol_tl02",
         "stationCode": "STL01",
         "status": "RESPONDING"
     },
@@ -26,7 +26,7 @@
         "longitude": 100.5555,
         "address": "หน้าผับ Arena 10",
         "message": "ถูกกลุ่มคนรุมทำร้าย!",
-        "userUsername": "patrol1",
+        "userUsername": "patrol_tl01",
         "stationCode": "STL01",
         "status": "ACTIVE"
     },
@@ -36,9 +36,41 @@
         "longitude": 100.5540,
         "address": "แยกทองหล่อ-เพชรบุรี",
         "message": "รถมอเตอร์ไซค์เสีย ต้องการความช่วยเหลือ",
-        "userUsername": "patrol3",
+        "userUsername": "patrol_tl03",
         "stationCode": "STL01",
         "status": "RESOLVED",
         "resolutionNote": "ส่งช่างมาซ่อมแล้ว"
+    },
+    {
+        "type": "NEED_BACKUP",
+        "latitude": 13.7115,
+        "longitude": 100.5980,
+        "address": "ตลาดพระโขนง",
+        "message": "พบกลุ่มตีกัน ต้องการกำลังเสริม",
+        "userUsername": "patrol_pk01",
+        "stationCode": "SPR01",
+        "status": "RESOLVED",
+        "resolutionNote": "ควบคุมสถานการณ์ได้แล้ว"
+    },
+    {
+        "type": "EMERGENCY",
+        "latitude": 13.7220,
+        "longitude": 100.5270,
+        "address": "ลานจอดรถอาคารสาทร",
+        "message": "พบผู้ต้องสงสัยกำลังงัดรถ!",
+        "userUsername": "patrol_st01",
+        "stationCode": "SAT01",
+        "status": "ACTIVE"
+    },
+    {
+        "type": "VEHICLE_BREAKDOWN",
+        "latitude": 13.7315,
+        "longitude": 100.5425,
+        "address": "หน้าสวนลุมพินี",
+        "message": "รถเสีย ต้องการความช่วยเหลือ",
+        "userUsername": "patrol_lp01",
+        "stationCode": "SLP01",
+        "status": "RESOLVED",
+        "resolutionNote": "เรียกรถยกมารับ"
     }
 ]

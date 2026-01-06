@@ -4,7 +4,7 @@
         "description": "ตรวจพื้นที่สถานบันเทิงและจุดเปลี่ยวตามแผน ไม่พบเหตุผิดปกติ",
         "latitude": 13.7438,
         "longitude": 100.5555,
-        "userUsername": "patrol1",
+        "userUsername": "patrol_tl01",
         "isResolved": true
     },
     {
@@ -12,7 +12,7 @@
         "description": "จับกุมผู้ต้องสงสัย 2 ราย พร้อมของกลางยาบ้า 50 เม็ด",
         "latitude": 13.7410,
         "longitude": 100.5530,
-        "userUsername": "patrol2",
+        "userUsername": "patrol_tl02",
         "isResolved": true
     },
     {
@@ -20,7 +20,7 @@
         "description": "ช่วยเหลือประชาชนรถยนต์เสียกลางทาง ประสานช่างมาดำเนินการ",
         "latitude": 13.7425,
         "longitude": 100.5540,
-        "userUsername": "patrol3",
+        "userUsername": "patrol_tl03",
         "isResolved": true
     },
     {
@@ -28,7 +28,55 @@
         "description": "เหตุทะเลาะวิวาทหน้าสถานบันเทิง ควบคุมสถานการณ์ได้ มีผู้บาดเจ็บ 2 ราย",
         "latitude": 13.7438,
         "longitude": 100.5555,
-        "userUsername": "patrol1",
+        "userUsername": "patrol_tl01",
         "isResolved": false
+    },
+    {
+        "type": "PREVENTION",
+        "description": "ตรวจตลาดพระโขนง พบกลุ่มมิจฉาชีพ แจ้งเตือนประชาชน",
+        "latitude": 13.7115,
+        "longitude": 100.5980,
+        "userUsername": "patrol_pk01",
+        "isResolved": true
+    },
+    {
+        "type": "SUPPRESSION",
+        "description": "จับกุมผู้ต้องหาล้วงกระเป๋า ส่งดำเนินคดี",
+        "latitude": 13.7120,
+        "longitude": 100.5985,
+        "userUsername": "patrol_pk02",
+        "isResolved": true
+    },
+    {
+        "type": "PREVENTION",
+        "description": "ตรวจลานจอดรถอาคารสาทร พบบุคคลน่าสงสัย ตรวจสอบแล้วปกติ",
+        "latitude": 13.7220,
+        "longitude": 100.5270,
+        "userUsername": "patrol_st01",
+        "isResolved": true
+    },
+    {
+        "type": "SUPPRESSION",
+        "description": "ไล่จับคนร้ายวิ่งราวสร้อยทอง จับกุมได้สำเร็จ",
+        "latitude": 13.7230,
+        "longitude": 100.5275,
+        "userUsername": "patrol_st02",
+        "isResolved": true
+    },
+    {
+        "type": "PREVENTION",
+        "description": "ตรวจสวนลุมพินี ช่วงเช้า พบสิ่งปกติ",
+        "latitude": 13.7315,
+        "longitude": 100.5425,
+        "userUsername": "patrol_lp01",
+        "isResolved": true
+    },
+    {
+        "type": "SUPPRESSION",
+        "description": "ระงับเหตุทะเลาะวิวาทกลุ่มวัยรุ่นหน้าศูนย์สยาม",
+        "latitude": 13.7460,
+        "longitude": 100.5340,
+        "userUsername": "patrol_lp01",
+        "isResolved": true
     }
 ]

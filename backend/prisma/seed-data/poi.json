@@ -1,50 +1,122 @@
 [
     {
-        "name": "ธนาคารกสิกรไทย สาขาทองหล่อ",
-        "description": "สาขาหลักปากซอยทองหล่อ",
+        "name": "ธนาคารกรุงเทพ สาขาทองหล่อ",
         "category": "BANK",
         "priority": "HIGH",
-        "latitude": 13.7251,
-        "longitude": 100.5785,
-        "address": "ปากซอยทองหล่อ ถนนสุขุมวิท",
-        "stationCode": "STL01",
-        "contactInfo": "02-123-4567"
-    },
-    {
-        "name": "ห้างทองเยาวราช",
-        "description": "ร้านทองขนาดใหญ่",
-        "category": "GOLD_SHOP",
-        "priority": "HIGH",
-        "latitude": 13.7285,
-        "longitude": 100.5812,
-        "address": "ทองหล่อ ซอย 5",
+        "latitude": 13.7432,
+        "longitude": 100.5545,
+        "address": "89 ซ.ทองหล่อ แขวงคลองตันเหนือ",
+        "description": "สาขาใหญ่ มีตู้ ATM ด้านนอก 3 ตู้",
         "stationCode": "STL01"
     },
     {
-        "name": "โรงเรียนนานาชาติ",
+        "name": "ร้านทองยี่กี",
+        "category": "GOLD_SHOP",
+        "priority": "CRITICAL",
+        "latitude": 13.7440,
+        "longitude": 100.5552,
+        "address": "ซ.ทองหล่อ 8",
+        "description": "ร้านทองเก่าแก่ มูลค่าสินค้าสูง",
+        "stationCode": "STL01"
+    },
+    {
+        "name": "โรงเรียนอนุบาลทองหล่อ",
         "category": "SCHOOL",
-        "priority": "MEDIUM",
-        "latitude": 13.7350,
-        "longitude": 100.5840,
-        "address": "ทองหล่อ ซอย 15",
+        "priority": "HIGH",
+        "latitude": 13.7450,
+        "longitude": 100.5560,
+        "address": "ซ.ทองหล่อ 13",
+        "description": "โรงเรียนอนุบาล-ประถม นักเรียน 500 คน",
         "stationCode": "STL01"
     },
     {
         "name": "โรงพยาบาลสมิติเวช",
         "category": "HOSPITAL",
         "priority": "MEDIUM",
-        "latitude": 13.7380,
-        "longitude": 100.5790,
-        "address": "สุขุมวิท 49",
+        "latitude": 13.7458,
+        "longitude": 100.5568,
+        "address": "ซ.สุขุมวิท 49",
+        "description": "โรงพยาบาลเอกชนขนาดใหญ่",
         "stationCode": "STL01"
     },
     {
-        "name": "The Commons",
+        "name": "ห้างเจ-อเวนิว ทองหล่อ",
         "category": "MALL",
-        "priority": "LOW",
-        "latitude": 13.7355,
-        "longitude": 100.5825,
-        "address": "ทองหล่อ 17",
+        "priority": "MEDIUM",
+        "latitude": 13.7465,
+        "longitude": 100.5575,
+        "address": "ถ.ทองหล่อ",
+        "description": "ห้างสรรพสินค้า มีลานจอดรถใต้ดิน",
         "stationCode": "STL01"
+    },
+    {
+        "name": "วัดคลองตันนอก",
+        "category": "TEMPLE",
+        "priority": "LOW",
+        "latitude": 13.7420,
+        "longitude": 100.5535,
+        "address": "ซ.ทองหล่อ 5",
+        "description": "วัดประจำซอย",
+        "stationCode": "STL01"
+    },
+    {
+        "name": "ธนาคารกสิกร สาขาพระโขนง",
+        "category": "BANK",
+        "priority": "HIGH",
+        "latitude": 13.7125,
+        "longitude": 100.5990,
+        "address": "ถ.สุขุมวิท 71",
+        "description": "สาขาหลัก มีตู้ ATM 4 ตู้",
+        "stationCode": "SPR01"
+    },
+    {
+        "name": "ตลาดพระโขนง",
+        "category": "MARKET",
+        "priority": "MEDIUM",
+        "latitude": 13.7115,
+        "longitude": 100.5980,
+        "address": "ซ.พระโขนง",
+        "description": "ตลาดสดประจำย่าน",
+        "stationCode": "SPR01"
+    },
+    {
+        "name": "ธนาคารไทยพาณิชย์ สาขาสาทร",
+        "category": "BANK",
+        "priority": "HIGH",
+        "latitude": 13.7225,
+        "longitude": 100.5275,
+        "address": "ถ.สาทรใต้",
+        "description": "สาขาสำนักงานใหญ่",
+        "stationCode": "SAT01"
+    },
+    {
+        "name": "อาคารเอ็มไพร์ทาวเวอร์",
+        "category": "OTHER",
+        "priority": "MEDIUM",
+        "latitude": 13.7230,
+        "longitude": 100.5280,
+        "address": "ถ.สาทรใต้",
+        "description": "อาคารสำนักงาน 60 ชั้น",
+        "stationCode": "SAT01"
+    },
+    {
+        "name": "สวนลุมพินี",
+        "category": "OTHER",
+        "priority": "MEDIUM",
+        "latitude": 13.7315,
+        "longitude": 100.5425,
+        "address": "ถ.พระราม 4",
+        "description": "สวนสาธารณะขนาดใหญ่",
+        "stationCode": "SLP01"
+    },
+    {
+        "name": "ศูนย์การค้าสยามพารากอน",
+        "category": "MALL",
+        "priority": "HIGH",
+        "latitude": 13.7460,
+        "longitude": 100.5340,
+        "address": "ถ.พระราม 1",
+        "description": "ห้างหรู ศูนย์รวมแบรนด์ระดับโลก",
+        "stationCode": "SLP01"
     }
 ]

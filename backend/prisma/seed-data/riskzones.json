@@ -44,25 +44,69 @@
         "stationCode": "STL01"
     },
     {
-        "name": "ปากซอยทองหล่อ (ใกล้ BTS)",
-        "description": "จุดที่มักเกิดเหตุล้วงกระเป๋าและวิ่งราวทรัพย์",
+        "name": "ตลาดพระโขนง ช่วงค่ำ",
+        "description": "เกิดเหตุล้วงกระเป๋าบ่อย",
         "category": "THEFT",
-        "latitude": 13.7455,
-        "longitude": 100.5590,
-        "radius": 50,
+        "latitude": 13.7115,
+        "longitude": 100.5980,
+        "radius": 150,
         "riskLevel": "MEDIUM",
-        "requiredCheckIns": 4,
-        "stationCode": "STL01"
+        "requiredCheckIns": 3,
+        "stationCode": "SPR01"
     },
     {
-        "name": "ตลาดนัดกลางคืน",
-        "description": "พื้นที่แออัด เสี่ยงต่อล้วงกระเป๋า",
+        "name": "ซ.สุขุมวิท 71 ซอยเปลี่ยว",
+        "description": "ซอยเปลี่ยว มักเกิดเหตุงัดแงะ",
         "category": "THEFT",
-        "latitude": 13.7422,
-        "longitude": 100.5545,
-        "radius": 150,
-        "riskLevel": "LOW",
-        "requiredCheckIns": 2,
-        "stationCode": "STL01"
+        "latitude": 13.7130,
+        "longitude": 100.5995,
+        "radius": 80,
+        "riskLevel": "HIGH",
+        "requiredCheckIns": 4,
+        "stationCode": "SPR01"
+    },
+    {
+        "name": "ลานจอดรถอาคารสาทร",
+        "description": "ถูกขโมยของในรถบ่อย",
+        "category": "THEFT",
+        "latitude": 13.7220,
+        "longitude": 100.5270,
+        "radius": 100,
+        "riskLevel": "HIGH",
+        "requiredCheckIns": 4,
+        "stationCode": "SAT01"
+    },
+    {
+        "name": "หน้า 7-11 ถ.สาทร",
+        "description": "จุดวิ่งราวสร้อยทอง",
+        "category": "ROBBERY",
+        "latitude": 13.7230,
+        "longitude": 100.5275,
+        "radius": 50,
+        "riskLevel": "HIGH",
+        "requiredCheckIns": 5,
+        "stationCode": "SAT01"
+    },
+    {
+        "name": "สวนลุมพินี ฝั่งพระราม 4",
+        "description": "มีเหตุขโมยจักรยานบ่อย",
+        "category": "THEFT",
+        "latitude": 13.7315,
+        "longitude": 100.5425,
+        "radius": 200,
+        "riskLevel": "MEDIUM",
+        "requiredCheckIns": 3,
+        "stationCode": "SLP01"
+    },
+    {
+        "name": "หน้าศูนย์สยาม",
+        "description": "มักเกิดเหตุทะเลาะวิวาทกลุ่มวัยรุ่น",
+        "category": "VIOLENT",
+        "latitude": 13.7460,
+        "longitude": 100.5340,
+        "radius": 100,
+        "riskLevel": "HIGH",
+        "requiredCheckIns": 5,
+        "stationCode": "SLP01"
     }
 ]

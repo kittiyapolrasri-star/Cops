@@ -8,17 +8,37 @@
         "rank": "พล.ต.อ."
     },
     {
-        "username": "station_commander",
+        "username": "cmd_thonglor",
         "password": "password123",
         "firstName": "สมชาย",
         "lastName": "ใจดี",
         "role": "STATION",
         "rank": "พ.ต.อ.",
-        "position": "ผกก.",
+        "position": "ผกก.สน.ทองหล่อ",
         "stationCode": "STL01"
     },
     {
-        "username": "patrol01",
+        "username": "cmd_phrakhanong",
+        "password": "password123",
+        "firstName": "วิชัย",
+        "lastName": "เข้มแข็ง",
+        "role": "STATION",
+        "rank": "พ.ต.อ.",
+        "position": "ผกก.สน.พระโขนง",
+        "stationCode": "SPR01"
+    },
+    {
+        "username": "cmd_sathorn",
+        "password": "password123",
+        "firstName": "ประยุทธ์",
+        "lastName": "รักชาติ",
+        "role": "STATION",
+        "rank": "พ.ต.อ.",
+        "position": "ผกก.สน.สาทร",
+        "stationCode": "SAT01"
+    },
+    {
+        "username": "patrol_tl01",
         "password": "password123",
         "firstName": "วิชัย",
         "lastName": "กล้าหาญ",
@@ -28,7 +48,7 @@
         "stationCode": "STL01"
     },
     {
-        "username": "patrol02",
+        "username": "patrol_tl02",
         "password": "password123",
         "firstName": "มานะ",
         "lastName": "อดทน",
@@ -36,5 +56,65 @@
         "rank": "ส.ต.ท.",
         "position": "ผบ.หมู่ ป.",
         "stationCode": "STL01"
+    },
+    {
+        "username": "patrol_tl03",
+        "password": "password123",
+        "firstName": "สมศักดิ์",
+        "lastName": "ขยัน",
+        "role": "PATROL",
+        "rank": "ส.ต.ต.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "STL01"
+    },
+    {
+        "username": "patrol_pk01",
+        "password": "password123",
+        "firstName": "ธนกร",
+        "lastName": "ศรีสุข",
+        "role": "PATROL",
+        "rank": "ส.ต.อ.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "SPR01"
+    },
+    {
+        "username": "patrol_pk02",
+        "password": "password123",
+        "firstName": "อานนท์",
+        "lastName": "มั่นคง",
+        "role": "PATROL",
+        "rank": "ส.ต.ท.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "SPR01"
+    },
+    {
+        "username": "patrol_st01",
+        "password": "password123",
+        "firstName": "ชาตรี",
+        "lastName": "พิทักษ์",
+        "role": "PATROL",
+        "rank": "ส.ต.อ.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "SAT01"
+    },
+    {
+        "username": "patrol_st02",
+        "password": "password123",
+        "firstName": "เกรียงศักดิ์",
+        "lastName": "ซื่อสัตย์",
+        "role": "PATROL",
+        "rank": "ส.ต.ท.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "SAT01"
+    },
+    {
+        "username": "patrol_lp01",
+        "password": "password123",
+        "firstName": "พิชัย",
+        "lastName": "ยุติธรรม",
+        "role": "PATROL",
+        "rank": "ส.ต.อ.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "SLP01"
     }
 ]
