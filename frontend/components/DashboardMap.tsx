@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, GeoJSON, useMap, useMapEvents, Polyline } from 'react-leaflet';
 import L from 'leaflet';
-import { trackingApi, riskzoneApi, organizationApi, poiApi, crimeApi, sosApi } from '@/lib/api';
+import { trackingApi, riskzoneApi, organizationApi, poiApi, crimeApi, sosApi, patrolPlanApi } from '@/lib/api';
 import {
     createStationIcon,
     createPatrolIcon,
@@ -135,6 +135,11 @@ export default function DashboardMap() {
 
     // ===== SEARCH FILTERS =====
     const [searchRadius, setSearchRadius] = useState<number>(0); // 0 = no filter, in km
+    const [crimeMonthFilter, setCrimeMonthFilter] = useState<number>(0); // 0 = all, 3/6/12 months
+
+    // ===== PATROL PLAN DISPLAY =====
+    const [showPatrolRoute, setShowPatrolRoute] = useState(false);
+    const [patrolPlans, setPatrolPlans] = useState<any[]>([]);
 
     // ===== THREAT CATEGORY FILTERS =====
     const [threatFilters, setThreatFilters] = useState({
@@ -163,7 +168,7 @@ export default function DashboardMap() {
                 ? trackingApi.getActivePatrols()
                 : trackingApi.getHistoricalPatrols(undefined, 24);
 
-            const [patrolRes, riskRes, stationRes, bureauRes, provinceRes, poiRes, crimeRes, sosRes] = await Promise.all([
+            const [patrolRes, riskRes, stationRes, bureauRes, provinceRes, poiRes, crimeRes, sosRes, planRes] = await Promise.all([
                 patrolPromise,
                 riskzoneApi.getAll(),
                 organizationApi.getStations(),
@@ -172,6 +177,7 @@ export default function DashboardMap() {
                 poiApi.getAll(),
                 crimeApi.getHeatmap(),
                 sosApi.getActive(),
+                patrolPlanApi.getAll(),
             ]);
 
             if (patrolRes.data) setPatrols(patrolRes.data);
@@ -182,6 +188,7 @@ export default function DashboardMap() {
             if (poiRes.data) setPois(poiRes.data);
             if (crimeRes.data) setCrimes(crimeRes.data);
             if (sosRes.data) setSosAlerts(sosRes.data);
+            if (planRes.data) setPatrolPlans(planRes.data);
         } catch (err) {
             console.error('Map data fetch error', err);
         } finally {
@@ -271,6 +278,28 @@ export default function DashboardMap() {
             return threatFilters[category as keyof typeof threatFilters] ?? threatFilters.OTHER;
         });
     }, [riskZones, selectedProvince, threatFilters]);
+
+    // Filtered crimes by date (3/6/12 months)
+    const filteredCrimes = useMemo(() => {
+        if (crimeMonthFilter === 0) return crimes;
+        const cutoffDate = new Date();
+        cutoffDate.setMonth(cutoffDate.getMonth() - crimeMonthFilter);
+        return crimes.filter((c: any) => {
+            const crimeDate = new Date(c.occurredAt);
+            return crimeDate >= cutoffDate;
+        });
+    }, [crimes, crimeMonthFilter]);
+
+    // Find nearest patrols to a given location
+    const findNearestPatrols = useCallback((lat: number, lng: number, count: number = 5) => {
+        return filteredPatrols
+            .map((p) => ({
+                ...p,
+                distance: calculateDistance(lat, lng, p.currentLocation.latitude, p.currentLocation.longitude),
+            }))
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, count);
+    }, [filteredPatrols]);
 
     // Province info for selected province
     const provinceInfo = useMemo(() => {
@@ -624,6 +653,35 @@ export default function DashboardMap() {
                         <Layers className="w-3 h-3" />
                         <span>Heatmap</span>
                     </button>
+
+                    <button
+                        onClick={() => setShowPatrolRoute(!showPatrolRoute)}
+                        className={`w-full flex items-center gap-2 px-2 py-1 rounded-lg text-[10px] transition ${showPatrolRoute ? 'bg-cyan-500/20 text-cyan-400' : 'bg-gray-800 text-gray-500'
+                            }`}
+                    >
+                        <Navigation className="w-3 h-3" />
+                        <span>เส้นทางตรวจ ({patrolPlans.length})</span>
+                    </button>
+                </div>
+
+                {/* Crime Date Filter */}
+                <div className="border-t border-gray-700 pt-2">
+                    <p className="text-[9px] text-gray-500 uppercase mb-1">ช่วงเวลาคดี</p>
+                    <select
+                        value={crimeMonthFilter}
+                        onChange={(e) => setCrimeMonthFilter(Number(e.target.value))}
+                        className="w-full bg-gray-800 text-white text-[10px] px-2 py-1 rounded-lg border border-gray-600 focus:outline-none focus:border-cyan-500"
+                    >
+                        <option value={0}>ทั้งหมด</option>
+                        <option value={3}>3 เดือน</option>
+                        <option value={6}>6 เดือน</option>
+                        <option value={12}>12 เดือน</option>
+                    </select>
+                    {crimeMonthFilter > 0 && (
+                        <p className="text-[9px] text-orange-400 mt-1">
+                            แสดง {filteredCrimes.length} คดี จาก {crimes.length}
+                        </p>
+                    )}
                 </div>
 
                 {/* Threat Filters */}
@@ -825,6 +883,56 @@ export default function DashboardMap() {
                     />
                 ))}
 
+                {/* Patrol Plan Routes */}
+                {showPatrolRoute && patrolPlans.map((plan: any) => {
+                    const checkpoints = plan.checkpoints || [];
+                    if (checkpoints.length < 2) return null;
+
+                    // Sort by sequence and create path
+                    const sortedPoints = [...checkpoints]
+                        .sort((a: any, b: any) => a.sequence - b.sequence)
+                        .map((cp: any) => [cp.latitude, cp.longitude] as [number, number]);
+
+                    return (
+                        <React.Fragment key={`route-${plan.id}`}>
+                            {/* Route Line */}
+                            <Polyline
+                                positions={sortedPoints}
+                                pathOptions={{
+                                    color: '#06b6d4',
+                                    weight: 3,
+                                    opacity: 0.8,
+                                    dashArray: '10, 10',
+                                }}
+                            />
+                            {/* Checkpoint Markers */}
+                            {checkpoints.map((cp: any) => (
+                                <Marker
+                                    key={cp.id}
+                                    position={[cp.latitude, cp.longitude]}
+                                    icon={L.divIcon({
+                                        className: 'checkpoint-marker',
+                                        html: `<div style="background: #06b6d4; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">${cp.sequence}</div>`,
+                                        iconSize: [24, 24],
+                                        iconAnchor: [12, 12],
+                                    })}
+                                >
+                                    <Popup>
+                                        <div className="bg-gray-900 text-white p-2 rounded min-w-[150px]">
+                                            <p className="font-bold text-sm text-cyan-400">📍 {cp.name}</p>
+                                            <p className="text-xs text-gray-400">ลำดับที่ {cp.sequence}</p>
+                                            <p className="text-xs text-gray-400">รัศมี {cp.radius || 50}m</p>
+                                            {cp.stayDuration && (
+                                                <p className="text-xs text-gray-400">อยู่ {cp.stayDuration} นาที</p>
+                                            )}
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            ))}
+                        </React.Fragment>
+                    );
+                })}
+
                 {/* Stations */}
                 {showStations && zoomShowStations && filteredStations.filter((s) => s.latitude && s.longitude).map((station) => (
                     <Marker
@@ -947,7 +1055,7 @@ export default function DashboardMap() {
                 ))}
 
                 {/* Crime Heatmap (as circles) */}
-                {showCrimes && crimes.filter((crime: any) => crime.latitude && crime.longitude).map((crime: any) => (
+                {showCrimes && filteredCrimes.filter((crime: any) => crime.latitude && crime.longitude).map((crime: any) => (
                     <Circle
                         key={crime.id}
                         center={[crime.latitude, crime.longitude]}
@@ -1004,11 +1112,29 @@ export default function DashboardMap() {
                         }}
                     >
                         <Popup>
-                            <div className="bg-gray-900 text-white p-3 rounded min-w-[220px]">
+                            <div className="bg-gray-900 text-white p-3 rounded min-w-[250px]">
                                 <p className="font-bold text-sm text-red-400">🚨 SOS Alert</p>
                                 <p className="text-xs text-white mt-1">{sos.user?.firstName} {sos.user?.lastName}</p>
                                 <p className="text-xs text-gray-400">{sos.type}</p>
                                 {sos.message && <p className="text-xs text-gray-400 mt-1">{sos.message}</p>}
+
+                                {/* Nearest Patrols */}
+                                <div className="mt-2 pt-2 border-t border-gray-700">
+                                    <p className="text-[10px] text-cyan-400 uppercase mb-1">🚔 สายตรวจใกล้เคียง</p>
+                                    {findNearestPatrols(sos.latitude, sos.longitude, 3).length > 0 ? (
+                                        <div className="space-y-1">
+                                            {findNearestPatrols(sos.latitude, sos.longitude, 3).map((p: any, idx: number) => (
+                                                <div key={p.id} className="flex justify-between items-center text-[10px]">
+                                                    <span className="text-white">{idx + 1}. {p.user?.rank} {p.user?.firstName}</span>
+                                                    <span className="text-cyan-400 font-mono">{p.distance.toFixed(1)} km</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-[10px] text-gray-500">ไม่พบสายตรวจในพื้นที่</p>
+                                    )}
+                                </div>
+
                                 <button
                                     onClick={(e) => { e.stopPropagation(); openDetailPanel(sos, 'sos'); }}
                                     className="mt-2 w-full bg-red-600 hover:bg-red-500 text-white text-xs py-1.5 rounded transition-colors"
