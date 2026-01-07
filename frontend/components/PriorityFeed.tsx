@@ -60,7 +60,7 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
                     .sort((a: Incident, b: Incident) =>
                         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
                     )
-                    .slice(0, 10);
+                    .slice(0, 20);
                 setIncidents(sorted);
             } catch (error) {
                 console.error('Failed to fetch incidents:', error);

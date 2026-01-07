@@ -92,13 +92,13 @@ export default function DashboardPage() {
             {/* ===== FLOATING STATS HUD (Top Center) ===== */}
             <FloatingStatsHUD stats={stats} />
 
-            {/* ===== REAL-TIME CLOCK (Top Left after sidebar) ===== */}
-            <RealTimeClock />
-
             {/* GOD'S EYE VIEW badge removed - DashboardMap has its own top-left filter bar */}
 
-            {/* ===== HEADER INFO (Bottom Left) ===== */}
-            <div className="absolute bottom-6 left-6 z-[500] flex items-center gap-3">
+            {/* ===== BOTTOM LEFT GROUP (Clock + Notification + User Profile) ===== */}
+            <div className="absolute bottom-6 left-56 z-[500] flex items-center gap-3">
+                {/* Real-Time Clock */}
+                <RealTimeClock />
+
                 {/* Notification Bell */}
                 <div className="bg-black/70 backdrop-blur-xl rounded-xl p-2 border border-white/10">
                     <NotificationBell />
