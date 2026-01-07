@@ -95,7 +95,7 @@ export default function DashboardPage() {
             {/* GOD'S EYE VIEW badge removed - DashboardMap has its own top-left filter bar */}
 
             {/* ===== BOTTOM LEFT GROUP (Clock + Notification + User Profile) ===== */}
-            <div className="absolute bottom-6 left-56 z-[500] flex items-center gap-3">
+            <div className="absolute bottom-6 left-4 z-[500] flex items-center gap-3">
                 {/* Real-Time Clock */}
                 <RealTimeClock />
 
