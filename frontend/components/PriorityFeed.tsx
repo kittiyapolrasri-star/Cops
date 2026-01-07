@@ -132,11 +132,11 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
     }
 
     return (
-        <div className="absolute bottom-4 right-4 z-[500] w-80 max-h-[280px] bg-black/70 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+        <div className="absolute top-4 right-4 bottom-4 z-[500] w-80 bg-black/80 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-rose-500/10 to-transparent">
+            <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-rose-500/10 to-transparent flex-shrink-0">
                 <div className="flex items-center gap-2">
-                    <Siren className="w-4 h-4 text-rose-400" />
+                    <Siren className="w-4 h-4 text-rose-400 animate-pulse" />
                     <h3 className="text-sm font-bold text-white tracking-wide">PRIORITY FEED</h3>
                     <span className="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded-full font-medium">
                         {incidents.length}
@@ -149,8 +149,8 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
                 )}
             </div>
 
-            {/* Feed List */}
-            <div className="overflow-y-auto max-h-[200px] custom-scrollbar">
+            {/* Feed List - Full height scroll */}
+            <div className="overflow-y-auto flex-1 custom-scrollbar">
                 {loading ? (
                     <div className="p-8 text-center text-gray-500">
                         <div className="animate-spin w-6 h-6 border-2 border-gray-600 border-t-white rounded-full mx-auto mb-2"></div>
