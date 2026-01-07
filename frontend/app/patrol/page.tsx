@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useAuthStore } from '@/lib/store/auth';
-import { trackingApi, checkinApi, incidentApi } from '@/lib/api';
+import { trackingApi, checkinApi, incidentApi, sosApi, poiApi, uploadApi } from '@/lib/api';
 import {
     MapPin,
     Radio,
@@ -17,6 +17,9 @@ import {
     Send,
     ArrowLeft,
     Loader,
+    Siren,
+    Plus,
+    Building2,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -41,6 +44,9 @@ export default function PatrolPage() {
     const [checkIns, setCheckIns] = useState<number>(0);
     const [patrolTime, setPatrolTime] = useState<string>('00:00:00');
     const [patrolStartTime, setPatrolStartTime] = useState<Date | null>(null);
+    const [showSOSModal, setShowSOSModal] = useState(false);
+    const [showPOIModal, setShowPOIModal] = useState(false);
+    const [sosLoading, setSosLoading] = useState(false);
 
     useEffect(() => {
         checkAuth();
@@ -161,6 +167,48 @@ export default function PatrolPage() {
         }
     };
 
+    // SOS Emergency Handler
+    const handleSOS = async (type: string, message?: string) => {
+        if (!location) {
+            alert('ไม่พบตำแหน่ง กรุณารอสักครู่');
+            return;
+        }
+        setSosLoading(true);
+        try {
+            await sosApi.create({
+                type,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                message,
+            });
+            setShowSOSModal(false);
+            alert('🚨 ส่งสัญญาณฉุกเฉินสำเร็จ! กำลังแจ้งหน่วยใกล้เคียง...');
+        } catch (err) {
+            alert('ส่งสัญญาณล้มเหลว ลองใหม่อีกครั้ง');
+        } finally {
+            setSosLoading(false);
+        }
+    };
+
+    // POI Create Handler  
+    const handleCreatePOI = async (data: { name: string; category: string; description?: string }) => {
+        if (!location) {
+            alert('ไม่พบตำแหน่ง กรุณารอสักครู่');
+            return;
+        }
+        try {
+            await poiApi.create({
+                ...data,
+                latitude: location.latitude,
+                longitude: location.longitude,
+            });
+            setShowPOIModal(false);
+            alert('✅ บันทึกจุดสำคัญสำเร็จ!');
+        } catch (err) {
+            alert('บันทึกล้มเหลว ลองใหม่อีกครั้ง');
+        }
+    };
+
     if (!isAuthenticated) {
         return null;
     }
@@ -267,6 +315,26 @@ export default function PatrolPage() {
                         <span className="text-sm tracking-wider">SUPPRESSION</span>
                     </button>
                 </div>
+
+                {/* SOS Emergency Button */}
+                <button
+                    onClick={() => setShowSOSModal(true)}
+                    className="w-full py-5 rounded-xl font-bold text-lg flex items-center justify-center gap-3 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white shadow-lg shadow-red-900/30 transition animate-pulse border-2 border-red-400/50"
+                >
+                    <Siren className="w-7 h-7" />
+                    🚨 SOS EMERGENCY
+                </button>
+
+                {/* POI Create Button */}
+                <button
+                    onClick={() => setShowPOIModal(true)}
+                    disabled={!isPatrolling}
+                    className="w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 border border-purple-600/30 disabled:opacity-30 transition"
+                >
+                    <Plus className="w-6 h-6" />
+                    <Building2 className="w-5 h-5" />
+                    บันทึกจุดสำคัญ (POI)
+                </button>
             </div>
 
             {/* Incident Modal */}
@@ -285,6 +353,25 @@ export default function PatrolPage() {
                             alert('ส่งรายงานล้มเหลว');
                         }
                     }}
+                />
+            )}
+
+            {/* SOS Modal */}
+            {showSOSModal && (
+                <SOSModal
+                    location={location}
+                    loading={sosLoading}
+                    onClose={() => setShowSOSModal(false)}
+                    onSubmit={handleSOS}
+                />
+            )}
+
+            {/* POI Modal */}
+            {showPOIModal && (
+                <POIModal
+                    location={location}
+                    onClose={() => setShowPOIModal(false)}
+                    onSubmit={handleCreatePOI}
                 />
             )}
         </div>
@@ -452,6 +539,228 @@ function IncidentModal({
                             <>
                                 <Send className="w-6 h-6" />
                                 <span>SUBMIT REPORT</span>
+                            </>
+                        )}
+                    </button>
+
+                    <div className="h-4"></div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// SOS Modal Component
+function SOSModal({
+    location,
+    loading,
+    onClose,
+    onSubmit,
+}: {
+    location: Location | null;
+    loading: boolean;
+    onClose: () => void;
+    onSubmit: (type: string, message?: string) => void;
+}) {
+    const [message, setMessage] = useState('');
+    const [selectedType, setSelectedType] = useState('EMERGENCY');
+
+    const sosTypes = [
+        { type: 'EMERGENCY', label: 'ฉุกเฉินทั่วไป', emoji: '🚨', color: 'red' },
+        { type: 'UNDER_ATTACK', label: 'ถูกโจมตี', emoji: '⚠️', color: 'rose' },
+        { type: 'NEED_BACKUP', label: 'ต้องการกำลังเสริม', emoji: '🆘', color: 'orange' },
+        { type: 'MEDICAL', label: 'เหตุทางการแพทย์', emoji: '🏥', color: 'green' },
+        { type: 'SUSPECT_PURSUIT', label: 'ไล่ล่าผู้ต้องสงสัย', emoji: '🏃', color: 'purple' },
+    ];
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-[#0a0a0a] rounded-2xl border border-red-500/30 shadow-2xl shadow-red-900/20 overflow-hidden">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-red-600 to-rose-700 px-6 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Siren className="w-7 h-7 text-white animate-pulse" />
+                        <h2 className="text-xl font-bold text-white">SOS EMERGENCY</h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition">
+                        <X className="w-5 h-5 text-white" />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-5">
+                    {/* Location */}
+                    <div className="flex items-center gap-2 text-xs font-mono text-gray-400 bg-white/5 p-3 rounded-xl">
+                        <Navigation className="w-4 h-4 text-red-500" />
+                        {location ? `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` : 'กำลังหาตำแหน่ง...'}
+                    </div>
+
+                    {/* SOS Type Selection */}
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">ประเภทเหตุฉุกเฉิน</p>
+                        <div className="grid grid-cols-1 gap-2">
+                            {sosTypes.map((sos) => (
+                                <button
+                                    key={sos.type}
+                                    onClick={() => setSelectedType(sos.type)}
+                                    className={`py-3 px-4 rounded-xl text-left flex items-center gap-3 transition border ${selectedType === sos.type
+                                            ? 'bg-red-600/30 border-red-500 text-white'
+                                            : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                                        }`}
+                                >
+                                    <span className="text-2xl">{sos.emoji}</span>
+                                    <span className="font-bold">{sos.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Message */}
+                    <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ข้อความเพิ่มเติม</p>
+                        <textarea
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
+                            rows={2}
+                            placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)..."
+                        />
+                    </div>
+
+                    {/* Submit */}
+                    <button
+                        onClick={() => onSubmit(selectedType, message)}
+                        disabled={loading || !location}
+                        className="w-full py-5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-lg flex items-center justify-center gap-3 transition disabled:opacity-50"
+                    >
+                        {loading ? (
+                            <Loader className="w-6 h-6 animate-spin" />
+                        ) : (
+                            <>
+                                <Siren className="w-6 h-6" />
+                                ส่งสัญญาณ SOS
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// POI Modal Component
+function POIModal({
+    location,
+    onClose,
+    onSubmit,
+}: {
+    location: Location | null;
+    onClose: () => void;
+    onSubmit: (data: { name: string; category: string; description?: string }) => void;
+}) {
+    const [name, setName] = useState('');
+    const [category, setCategory] = useState('BANK');
+    const [description, setDescription] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const categories = [
+        { value: 'BANK', label: 'ธนาคาร', emoji: '🏦' },
+        { value: 'GOLD_SHOP', label: 'ร้านทอง', emoji: '💍' },
+        { value: 'ATM', label: 'ตู้ ATM', emoji: '🏧' },
+        { value: 'CONVENIENCE', label: 'ร้านสะดวกซื้อ', emoji: '🏪' },
+        { value: 'SCHOOL', label: 'โรงเรียน', emoji: '🏫' },
+        { value: 'TEMPLE', label: 'วัด', emoji: '🛕' },
+        { value: 'HOSPITAL', label: 'โรงพยาบาล', emoji: '🏥' },
+        { value: 'VIP_RESIDENCE', label: 'บ้านบุคคลสำคัญ', emoji: '🏠' },
+        { value: 'OTHER', label: 'อื่นๆ', emoji: '📍' },
+    ];
+
+    const handleSubmit = async () => {
+        if (!name.trim()) {
+            alert('กรุณาระบุชื่อสถานที่');
+            return;
+        }
+        setSubmitting(true);
+        await onSubmit({ name, category, description });
+        setSubmitting(false);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-end justify-center">
+            <div className="w-full max-w-lg bg-[#0a0a0a] rounded-t-3xl max-h-[90vh] overflow-y-auto border-t border-purple-500/30 shadow-2xl">
+                {/* Header */}
+                <div className="sticky top-0 bg-[#0a0a0a]/90 backdrop-blur-md px-6 py-5 border-b border-white/5 flex items-center justify-between z-10">
+                    <div className="flex items-center gap-3">
+                        <Building2 className="w-6 h-6 text-purple-400" />
+                        <h2 className="text-xl font-bold text-purple-400">บันทึกจุดสำคัญ</h2>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition text-gray-400">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                <div className="p-6 space-y-5">
+                    {/* Location */}
+                    <div className="flex items-center gap-2 text-xs font-mono text-gray-400 bg-white/5 p-3 rounded-xl">
+                        <Navigation className="w-4 h-4 text-purple-500" />
+                        {location ? `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` : 'กำลังหาตำแหน่ง...'}
+                    </div>
+
+                    {/* Name */}
+                    <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ชื่อสถานที่ *</p>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                            placeholder="เช่น ธนาคารกรุงไทย สาขาทองหล่อ"
+                        />
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ประเภท</p>
+                        <div className="grid grid-cols-3 gap-2">
+                            {categories.map((cat) => (
+                                <button
+                                    key={cat.value}
+                                    onClick={() => setCategory(cat.value)}
+                                    className={`py-3 px-2 rounded-xl flex flex-col items-center gap-1 transition border ${category === cat.value
+                                            ? 'bg-purple-600/30 border-purple-500 text-white'
+                                            : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
+                                        }`}
+                                >
+                                    <span className="text-xl">{cat.emoji}</span>
+                                    <span className="text-[10px] font-bold">{cat.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">รายละเอียด</p>
+                        <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 resize-none"
+                            rows={2}
+                            placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)..."
+                        />
+                    </div>
+
+                    {/* Submit */}
+                    <button
+                        onClick={handleSubmit}
+                        disabled={submitting || !location || !name.trim()}
+                        className="w-full py-5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg flex items-center justify-center gap-3 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {submitting ? (
+                            <Loader className="w-6 h-6 animate-spin" />
+                        ) : (
+                            <>
+                                <Plus className="w-6 h-6" />
+                                บันทึกจุดสำคัญ
                             </>
                         )}
                     </button>
