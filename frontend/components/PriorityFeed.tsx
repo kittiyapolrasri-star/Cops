@@ -132,7 +132,7 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
     }
 
     return (
-        <div className="absolute top-16 right-4 bottom-4 z-[500] w-72 bg-black/85 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
+        <div className="absolute top-4 right-4 bottom-4 z-[500] w-72 bg-black/90 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
             {/* Header */}
             <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-rose-500/10 to-transparent flex-shrink-0">
                 <div className="flex items-center gap-2">
