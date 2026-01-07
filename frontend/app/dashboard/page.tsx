@@ -11,6 +11,7 @@ const DashboardMap = dynamic(() => import('@/components/DashboardMap'), { ssr: f
 const FloatingStatsHUD = dynamic(() => import('@/components/FloatingStatsHUD'), { ssr: false });
 const PriorityFeed = dynamic(() => import('@/components/PriorityFeed'), { ssr: false });
 const NotificationBell = dynamic(() => import('@/components/NotificationBell'), { ssr: false });
+const RealTimeClock = dynamic(() => import('@/components/RealTimeClock'), { ssr: false });
 
 export default function DashboardPage() {
     const { user } = useAuthStore();
@@ -90,6 +91,9 @@ export default function DashboardPage() {
 
             {/* ===== FLOATING STATS HUD (Top Center) ===== */}
             <FloatingStatsHUD stats={stats} />
+
+            {/* ===== REAL-TIME CLOCK (Top Left after sidebar) ===== */}
+            <RealTimeClock />
 
             {/* GOD'S EYE VIEW badge removed - DashboardMap has its own top-left filter bar */}
 
