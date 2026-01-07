@@ -20,6 +20,8 @@ interface Incident {
     longitude: number;
     createdAt: string;
     isResolved: boolean;
+    photoUrl?: string;
+    audioUrl?: string;
     items?: IncidentItem[];
     user?: {
         firstName?: string;
@@ -130,7 +132,7 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
     }
 
     return (
-        <div className="absolute bottom-4 right-4 z-[500] w-80 max-h-[400px] bg-black/70 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+        <div className="absolute bottom-4 right-4 z-[500] w-80 max-h-[280px] bg-black/70 backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-gradient-to-r from-rose-500/10 to-transparent">
                 <div className="flex items-center gap-2">
@@ -148,7 +150,7 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
             </div>
 
             {/* Feed List */}
-            <div className="overflow-y-auto max-h-[340px] custom-scrollbar">
+            <div className="overflow-y-auto max-h-[200px] custom-scrollbar">
                 {loading ? (
                     <div className="p-8 text-center text-gray-500">
                         <div className="animate-spin w-6 h-6 border-2 border-gray-600 border-t-white rounded-full mx-auto mb-2"></div>
@@ -170,7 +172,13 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
                                     className={`w-full text-left px-4 py-3 hover:bg-white/5 transition-all border-l-2 ${getCategoryColor(category)} group`}
                                 >
                                     <div className="flex items-start gap-3">
-                                        <span className="text-lg">{getCategoryIcon(category)}</span>
+                                        {incident.photoUrl ? (
+                                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
+                                                <img src={incident.photoUrl} alt="" className="w-full h-full object-cover" />
+                                            </div>
+                                        ) : (
+                                            <span className="text-lg">{getCategoryIcon(category)}</span>
+                                        )}
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm text-white font-medium truncate group-hover:text-emerald-400 transition">
                                                 {incident.description || 'รายงานเหตุการณ์'}
@@ -178,7 +186,7 @@ export default function PriorityFeed({ onFlyTo, isCollapsed = false, onToggle }:
                                             <div className="flex items-center gap-2 mt-1 text-[10px] text-gray-500">
                                                 <span className="flex items-center gap-1">
                                                     <MapPin className="w-3 h-3" />
-                                                    {incident.user?.station?.name || 'ไม่ระบุ'}
+                                                    {incident.user?.station?.name?.replace('สถานีตำรวจภูธร', 'สน.').replace('สน.เมือง', 'สน.') || 'ไม่ระบุ'}
                                                 </span>
                                                 <span>•</span>
                                                 <span className="flex items-center gap-1">
