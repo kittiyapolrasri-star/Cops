@@ -116,5 +116,54 @@
         "rank": "ส.ต.อ.",
         "position": "ผบ.หมู่ ป.",
         "stationCode": "SLP01"
+    },
+    {
+        "username": "cmd_saraburi",
+        "password": "password123",
+        "firstName": "สุรศักดิ์",
+        "lastName": "มั่นคง",
+        "role": "PROVINCE",
+        "rank": "พล.ต.ต.",
+        "position": "ผบก.ภ.จว.สระบุรี"
+    },
+    {
+        "username": "cmd_muang_srb",
+        "password": "password123",
+        "firstName": "วีระ",
+        "lastName": "ศรีสระบุรี",
+        "role": "STATION",
+        "rank": "พ.ต.อ.",
+        "position": "ผกก.สภ.เมืองสระบุรี",
+        "stationCode": "SRB01"
+    },
+    {
+        "username": "cmd_kaengkhoi",
+        "password": "password123",
+        "firstName": "พิพัฒน์",
+        "lastName": "แก่งคอย",
+        "role": "STATION",
+        "rank": "พ.ต.อ.",
+        "position": "ผกก.สภ.แก่งคอย",
+        "stationCode": "SRB02"
+    },
+    {
+        "username": "patrol_srb01",
+        "password": "password123",
+        "firstName": "สมชาย",
+        "lastName": "สระบุรี",
+        "role": "PATROL",
+        "rank": "ส.ต.อ.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "SRB01"
+    },
+    {
+        "username": "patrol_srb02",
+        "password": "password123",
+        "firstName": "สมหมาย",
+        "lastName": "แก่งคอย",
+        "role": "PATROL",
+        "rank": "ส.ต.ท.",
+        "position": "ผบ.หมู่ ป.",
+        "stationCode": "SRB02"
     }
 ]
