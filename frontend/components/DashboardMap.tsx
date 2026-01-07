@@ -632,7 +632,7 @@ export default function DashboardMap() {
             />
 
             {/* ===== LEGEND & LAYER CONTROLS (Left side below filter) ===== */}
-            <div className="absolute top-28 left-56 z-[400] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl max-w-[160px] hidden md:block">
+            <div className="absolute top-20 left-56 z-[400] bg-gray-900/95 backdrop-blur-md border border-gray-700 rounded-xl p-3 shadow-2xl w-40 hidden md:block">
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-2 font-bold">Map Layers</p>
 
                 {/* Layer Toggles */}
